@@ -1,0 +1,39 @@
+# Database
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+
+# Logs
+*.log
+*.log.*
+home-assistant.log
+
+# Runtime storage
+.storage/
+
+# Dependencies (auto-reinstalled)
+deps/
+lib/
+
+# TTS cache
+tts/
+
+# Temp files
+*.tmp
+*.bak
+*.orig
+
+# Secrets (keep the template, not the values)
+secrets.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+*.swp

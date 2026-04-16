@@ -1,0 +1,47 @@
+alias: Sprinkler - notify why watering was skipped
+description: Sends a notification explaining skip reason at scheduled check time
+mode: single
+
+trigger:
+  - platform: time_pattern
+    minutes: "/30"
+
+condition:
+  - condition: time
+    after: "05:00:00"
+    before: "08:00:00"
+
+action:
+  - choose:
+
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.soil_moisture_median
+            above: 40
+        sequence:
+          - service: notify.notify
+            data:
+              title: "🌱 Sprinkler skipped"
+              message: >
+                Soil is adequately moist ({{ states('sensor.soil_moisture_median') | round(1) }}% — threshold is 40%). No watering needed.
+
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.Wind_Speed_Max_10min
+            above: 3
+        sequence:
+          - service: notify.notify
+            data:
+              title: "💨 Sprinkler skipped"
+              message: >
+                Too windy to water ({{ states('sensor.Wind__Speed_Max_10min') | round(1) }} mph — limit is 3
+                
+
+    default:
+      - service: notify.notify
+        data:
+          title: "💧 Sprinkler running"
+          message: >
+            Watering started. Soil moisture: {{ states('sensor.soil_moisture_median') | round(1) }}%, 
+            wind: {{ states('sensor.Wind_Speed_Max_10min') | round(1) }} mph. 
+            Will run for 30 minutes.

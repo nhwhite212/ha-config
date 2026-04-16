@@ -1,0 +1,289 @@
+- id: '1624586003695'
+  alias: RTL433 MQTT message_type Demuxer
+  description: Split rtl_433/# signals into msg topics, if message_type exists
+  trigger:
+  - platform: mqtt
+    topic: rtl_433/+/+
+  condition:
+  - condition: template
+    value_template: '{{ trigger.payload_json.message_type != null }}'
+  action:
+  - service: mqtt.publish
+    data:
+      payload: '{{ trigger.payload }}'
+      topic: rtl_433/{{ trigger.payload_json.model or "UnknownModel" }}/{{ trigger.payload_json.id
+        or "UnknownId" }}/msg{{ trigger.payload_json.message_type }}
+  mode: single
+
+
+
+
+- id: '162458600366'
+  alias: RTL433 MQTT message_type unknown
+  description: Split rtl_433/# signals into msg topics, if no message_type
+  trigger:
+  - platform: mqtt
+    topic: rtl_433/+/+
+  condition:
+  - condition: template
+    value_template: '{{ trigger.payload_json.message_type == null }}'
+  action:
+  - service: mqtt.publish
+    data:
+      payload: '{{trigger.payload}}'
+      topic: rtl_433/{{trigger.payload_json.model or "UnknownModel"}}/{{trigger.payload_json.id
+        or "UnknownId"}}/nomsg
+  mode:  parallel
+  
+
+
+  
+- id: cumrain99
+  alias: record cumulative rain every midnight
+  description: Roll over yesterdays cumulative rain as day_1
+  trigger:
+  - platform: time_pattern
+    hours: '23'
+    minutes: '59'
+  condition: []
+  action:
+  - variables:
+      rainfall1:
+        day_1: '{{ states(''sensor.rainfall_total_nj'') }}'
+  - service: mqtt.publish
+    data:
+      payload: '{{ rainfall1 | to_json }}'
+      retain: true
+      topic: ha/prior_days_rain
+  mode: single
+- id: cumhourly
+  alias: record rain every hour as hour_1
+  description: collect hour rain total
+  trigger:
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - variables:
+      rainfall2:
+        hour_1: '{{ states(''sensor.rainfall_total_nj'') }}'
+  - service: mqtt.publish
+    data:
+      payload: '{{ rainfall2 | to_json }}'
+      retain: true
+      topic: ha/prior_hours_rain
+  mode: single
+- id: cumten
+  alias: record rain every ten minutes as rain_10
+  description: collect ten min rain total
+  trigger:
+  - platform: time_pattern
+    minutes: /10
+  condition: []
+  action:
+  - variables:
+      rainfall10:
+        ten_1: '{{ states(''sensor.rainfall_total_nj'') }}'
+  - service: mqtt.publish
+    data:
+      payload: '{{ rainfall10 | to_json }}'
+      retain: true
+      topic: ha/prior_ten_rain
+  mode: single
+- id: '1705013309365'
+  alias: Turn on Front Porch NJ
+  description: Turn on the Front Porch light at dusk.
+  trigger:
+  - platform: sun
+    event: sunset
+  condition: []
+  action:
+  - type: turn_on
+    device_id: 024044c466a818348aa576f0f4801365
+    entity_id: 1b6cbb4aac47910732d6800c41a79751
+    domain: light
+  mode: single
+- id: '1705013419055'
+  alias: Turn off Front Porch Light NJ
+  description: Turn off front porch light in NJ at 10:47pm
+  trigger:
+  - platform: time
+    at: '22:47:00'
+  condition: []
+  action:
+  - type: turn_off
+    device_id: 024044c466a818348aa576f0f4801365
+    entity_id: 1b6cbb4aac47910732d6800c41a79751
+    domain: light
+  mode: single
+- id: '1705083695424'
+  alias: Low Battery Notifications & Actions
+  description: Check all batteries once a day and notify if any are below 20%
+  use_blueprint:
+    path: Blackshome/low-battery-notifications-and-actions.yaml
+    input:
+      include_time: time_enabled
+      time: 09:00:00
+      include_easy_notify: enable_easy_notify
+      notify_device:
+      - 19d9861985610f5425264d67746827fe
+- id: '1706886175106'
+  alias: 'NJ office '
+  description: Turn on NJ office south wall light at 6pm
+  trigger:
+  - platform: time
+    at: '18:00:00'
+  condition: []
+  action:
+  - type: turn_on
+    device_id: 0b029ffa2dafce61c1297ddd9bd67c97
+    entity_id: 8c218e3fb5b76b7b2428aabe49dafe36
+    domain: light
+  - service: light.turn_on
+    metadata: {}
+    data: {}
+    target:
+      device_id: 0b029ffa2dafce61c1297ddd9bd67c97
+  mode: single
+- id: '1706886303751'
+  alias: nj office off
+  description: ''
+  trigger:
+  - platform: time
+    at: '23:00:00'
+  condition: []
+  action:
+  - type: turn_off
+    device_id: 0b029ffa2dafce61c1297ddd9bd67c97
+    entity_id: 8c218e3fb5b76b7b2428aabe49dafe36
+    domain: light
+  mode: single
+- id: '1706886405463'
+  alias: NHW bedroom on
+  description: ''
+  trigger:
+  - platform: time
+    at: '21:00:00'
+  condition: []
+  action:
+  - type: turn_on
+    device_id: a05e41b0b631dfad016e4fef553ee60e
+    entity_id: 20d01a41542c2161ab19df9c4b7dde14
+    domain: light
+  mode: single
+- id: '1706886483346'
+  alias: NHW bedroom off
+  description: ''
+  trigger:
+  - platform: time
+    at: '22:30:00'
+  condition: []
+  action:
+  - type: turn_off
+    device_id: a05e41b0b631dfad016e4fef553ee60e
+    entity_id: 20d01a41542c2161ab19df9c4b7dde14
+    domain: light
+  mode: single
+- id: '1709594789893'
+  alias: motionjporch
+  description: Turn on Porch light if motion detected
+  trigger:
+  - platform: state
+    entity_id: binary_sensor.nj_porch_motion
+    from: 'off'
+    to: 'on'
+  condition:
+  - condition: sun
+    after: sunset
+    before: sunrise
+  action:
+  - service: light.turn_on
+    metadata: {}
+    data: {}
+    target:
+      device_id: bb6c4fdf84cd5d329e305aab2ac5c5e9
+  mode: single
+- id: '1711486703866'
+  alias: NJ Porch light off
+  description: Turn off NJ Porch light during the daytime
+  trigger:
+  - platform: sun
+    event: sunrise
+    offset: 00:05:00
+  condition:
+  - condition: device
+    type: is_on
+    device_id: 024044c466a818348aa576f0f4801365
+    entity_id: 1b6cbb4aac47910732d6800c41a79751
+    domain: light
+  - condition: sun
+    after: sunrise
+    before: sunset
+  action:
+  - service: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      area_id: front_porch_nj
+      device_id: bb6c4fdf84cd5d329e305aab2ac5c5e9
+  mode: single
+- id: '4329'
+  alias: Detect if Norman is home
+  description: 'Sets an input_boolean or sends a notification when Norman arrives
+    home.
+
+    '
+  trigger:
+  - platform: state
+    entity_id: person.norman
+    from: not_home
+    to: home
+  condition: []
+  action:
+  - service: notify.mobile_app_normans_iphone
+    data:
+      title: Presence
+      message: Norman has arrived home.
+  - service: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.someone_home
+  mode: single
+- id: '4328'
+  alias: Determine if someone is home
+  trigger:
+  - platform: state
+    entity_id:
+    - person.norman
+    - person.spouse
+    - person.guest
+  condition:
+  - condition: template
+    value_template: "{{ is_state('person.norman', 'home')\n    or is_state('person.guest',
+      'home') }}\n"
+  action:
+  - service: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.someone_home
+  mode: single
+- id: '1774208765071'
+  alias: PowerNJ
+  description: ''
+  triggers:
+  - type: voltage
+    device_id: f721a7843023d313cba5c8745bc02401
+    entity_id: b084733ba5d177ef48e240941ac88270
+    domain: sensor
+    trigger: device
+    below: 90
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+  conditions: []
+  actions:
+  - action: notify.mobile_app_baysidea
+    metadata: {}
+    data:
+      message: Power loss in NJ
+      title: Power down nj
+  mode: single

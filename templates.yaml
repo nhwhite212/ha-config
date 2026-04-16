@@ -1,0 +1,71 @@
+- sensor:
+    - name: Dewpoint NJ2
+      state: >
+        {% set T, RH = states('sensor.outside_temperature_deck'), states('sensor.outside_humidity_nj') %}
+        {% if (T == 'unknown')  or (RH == 'unknown') %}
+          unknown
+        {% else %}
+          {% set T = T | float %}
+          {% set T = (((T - 32) *5 )/ 9)  %}
+          {% set RH = RH | float %}
+          {% set a = 6.1121 | float %}
+          {% set b = 18.678 | float %}
+          {% set c = 257.14 | float %}
+          {% set d = 234.5 | float %}
+          {% set e = 2.71828 | float %}
+          {% set P = a*e**((b-T/d)*(T/(c+T))) | float %}
+          {% set gamma = log((RH / 100)*e**((b-T/d)*(T/(c+T)))) | float %}
+          {% set dew_temp = ((c * gamma) / (b - gamma)) %}
+          {% set DEWF = (((dew_temp * 9)/ 5) +32 )| round(2) %} 
+          {{ DEWF|float(2)}}
+        {% endif %}
+      unit_of_measurement: "°F"
+      unique_id: "20230306161301"
+      icon: mdi:water-percent-alert
+
+- sensor:
+    - name: wind speed mph
+      state: >
+        {% set windmph = states('sensor.wind_speed_kmh') %}
+        {%  if(windmph == 'unknown')      %}
+          unknown
+        {% else %}
+          {% set windmph = windmph | float / 1.609 %}
+          {{  windmph | float(2) }}
+        {% endif %}
+      unique_id: "windspeednjmph"
+
+- sensor:
+    - name: testsensor
+      state: >
+        testing
+      unique_id: "testing"
+
+##### Sprinkler Total Expected Precipitation ##################################
+- trigger:
+    - platform: time_pattern
+      hours: /1
+  action:
+    - service: weather.get_forecast
+      target:
+        entity_id: weather.openweathermap
+      data:
+        type: hourly
+      response_variable: my_forecast
+  sensor:
+    - name: Total Expected Precipitation NJ
+      unique_id: 8014e8d9-c606-4f7e-9f85-7df36996851f
+      icon: mdi:weather-pouring
+      unit_of_measurement: mm
+      state: >
+        {% set ns = namespace() %} 
+        {% set ns.totalprecipitation = 0 %}
+        {% for daypart in range(0, 7) %}
+          {% set precipitation = my_forecast.forecast[daypart].precipitation %} 
+          {% set precipitation_probability = my_forecast.forecast[daypart].precipitation_probability / 100 %}
+          {% if precipitation_probability > 0 %}
+            {% set precipitation = precipitation * precipitation_probability %}
+          {% endif %}
+          {% set ns.totalprecipitation = ns.totalprecipitation + precipitation %}
+        {% endfor %}
+        {{ ns.totalprecipitation | float(0) | round(2) }}

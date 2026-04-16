@@ -1,0 +1,29 @@
+- id: '1702163821461'
+  name: New scene
+  entities:
+    light.sengled_multicolor:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 9009
+      min_mireds: 111
+      max_mireds: 500
+      supported_color_modes:
+      - color_temp
+      - hs
+      color_mode: hs
+      brightness: 255
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      - 194.4
+      - 68
+      rgb_color:
+      - 81
+      - 213
+      - 255
+      xy_color:
+      - 0.171
+      - 0.276
+      friendly_name: Nhw office south wall
+      supported_features: 32
+      state: 'on'
+  metadata: {}

@@ -1,0 +1,19 @@
+alias: Sprinkler - emergency watchdog cutoff
+description: Force off if plug has been on longer than 35 minutes
+mode: single
+
+trigger:
+  - platform: state
+    entity_id: switch.YOUR_SPRINKLER_PLUG         # ← replace this
+    to: "on"
+    for:
+      minutes: 35
+
+action:
+  - service: switch.turn_off
+    target:
+      entity_id: switch.YOUR_SPRINKLER_PLUG
+
+  - service: notify.notify   # optional alert
+    data:
+      message: "Sprinkler watchdog triggered — turned off after 35 min"

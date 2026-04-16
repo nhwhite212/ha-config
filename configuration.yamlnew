@@ -1,0 +1,280 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Google Assistant (currently disabled)
+#google_assistant:
+#  project_id: MontclairHom
+#  service_account: !include SERVICE_ACCOUNT.JSON
+#  report_state: true
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+#template: !include templates.yaml
+
+sensor:
+  - platform: noaa_tides
+    name: "Belfast tides"
+    station_id: 8415191
+    scan_interval: 360
+
+  - platform: statistics
+    name: "Temperature last 24 hours"
+    entity_id: sensor.outside_temperature_nj
+    state_characteristic: average_linear
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    unique_id: rain_in_last_24_hours
+    name: "Rain in last 24 hours"
+    entity_id: sensor.rainfall_total_nj
+    state_characteristic: sum_differences
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    unique_id: rain_in_last_48_hours
+    name: "Rain in last 48 hours"
+    entity_id: sensor.rainfall_total_nj
+    state_characteristic: sum_differences
+    max_age:
+      hours: 48
+
+  - platform: statistics
+    unique_id: max_wind_speed_last_24_hours
+    name: "Max wind speed in last 24 hours"
+    entity_id: sensor.wind_speed_mph_2
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+mqtt:
+  sensor:
+    - name: Wind Speed kph
+      unique_id: "windspeednj"
+      value_template: "{{ value_json.wind_avg_km_h | round(3) }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: Outside Temperature NJ
+      unique_id: "temp_deck"
+      unit_of_measurement: "°F"
+      state_class: measurement
+      value_template: "{{ value_json.temperature_F | round(2) }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg56
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg56
+
+    - name: Outside Humidity NJ
+      unique_id: "humiditNJ"
+      value_template: "{{ value_json.humidity }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg56
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg56
+      icon: mdi:water-percent-alert
+
+    - name: Rainfall Total NJ
+      unique_id: "Rainfallnj"
+      unit_of_measurement: "inches"
+      icon: mdi:weather-rainy
+      value_template: "{{ value_json.rain_in }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: Wind Direction NJ
+      unique_id: "WinDirNJ"
+      value_template: "{{ value_json.wind_dir_deg }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: Soil Moisture NJ a7
+      unique_id: "SoilMoistureNJa7"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e57a7/nomsg
+      json_attributes_topic: rtl_433/Fineoffset/0e57a7/nomsg
+
+    - name: Soil Moisture NJ 2 c2
+      unique_id: "SoilMoistureNJc2"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e0cc2/nomsg
+      json_attributes_topic: rtl_433/Fineoffset/0e0c2omsg
+
+    - name: Soil Moisture NJ 3 89
+      unique_id: "SoilMoistureNJ89"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e5389/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e5389/nomsg
+
+    - name: Soil Moisture NJ 4 a3
+      unique_id: "SoilMoistureNJ4a3"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e0aa3/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e0aa3/nomsg
+
+    - name: Soil Moisture NJ 5 f2
+      unique_id: "SoilMoistureNJ5f2"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
+
+    - name: Soil Moisture NJ 6 28
+      unique_id: "SoilMoistureNJ6 28"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
+
+    - name: Water NJ 1
+      unique_id: "Waternj1"
+      value_template: "{{ value_json.consumption }}"
+      state_topic: rtl_433/Neptune-R900/1481706430/nomsg
+      json_attributes_topic: rtl_433/Neptune-R900/1481706430/nomsg
+
+    - name: Water NJ 2
+      unique_id: "Waternj2"
+      value_template: "{{ value_json.consumption }}"
+      state_topic: rtl_433/Neptune-R900/1481706434/nomsg
+      json_attributes_topic: rtl_433/Neptune-R900/1481706434/nomsg
+
+    - name: Water NJ 3
+      unique_id: "Waternj3"
+      value_template: "{{ value_json.consumption }}"
+      state_topic: rtl_433/Neptune-R900/1568418836/nomsg
+      json_attributes_topic: rtl_433/Neptune-R900/1568418836/nomsg
+
+    - name: Water NJ 4
+      unique_id: "Waternj4"
+      value_template: "{{ value_json.consumption }}"
+      state_topic: rtl_433/Neptune-R900/156841883/nomsg
+      json_attributes_topic: rtl_433/Neptune-R900/156841883/nomsg
+
+    - name: rain_day_1
+      icon: mdi:water-percent-alert
+      unit_of_measurement: "inches"
+      unique_id: rain_day_1
+      value_template: "{{ value_json.day_1 }}"
+      state_topic: ha/prior_days_rain
+      json_attributes_topic: ha/prior_days_rain
+
+    - name: rain_hour_1
+      unit_of_measurement: "inches"
+      unique_id: rain_hour_1
+      value_template: "{{ value_json.hour_1 }}"
+      state_topic: ha/prior_hours_rain
+      json_attributes_topic: ha/prior_hours_rain
+
+    - name: rain_ten_1
+      unit_of_measurement: "inches"
+      unique_id: rain_ten_1
+      value_template: "{{ value_json.ten_1 }}"
+      state_topic: ha/prior_ten_rain
+      json_attributes_topic: ha/prior_ten_rain
+
+    - name: water7242
+      unique_id: water7242
+      value_template: "{{ value_json.consumption }}"
+      state_topic: rtl_433/Neptune-R900/1460727242/nomsg
+      json_attributes_topic: rtl_433/Neptune-R900/1460727242/nomsg
+
+template:
+  - sensor:
+      - name: Dewpoint NJ2
+        device_class: temperature
+        state: >
+          {% set T = states('sensor.outside_temperature_deck') %}
+          {% set RH = states('sensor.outside_humidity_nj') %}
+          {% if T in ['unknown', 'unavailable'] or RH in ['unknown', 'unavailable'] %}
+            0.0
+          {% else %}
+            {% set T = (((T | float - 32) * 5) / 9) %}
+            {% set RH = RH | float %}
+            {% set a = 6.1121 %}
+            {% set b = 18.678 %}
+            {% set c = 257.14 %}
+            {% set d = 234.5 %}
+            {% set e = 2.71828 %}
+            {% set gamma = log((RH / 100) * e ** ((b - T / d) * (T / (c + T)))) %}
+            {% set dew_temp = (c * gamma) / (b - gamma) %}
+            {% set DEWF = ((dew_temp * 9) / 5 + 32) | round(2, default=0) %}
+            {{ DEWF }}
+          {% endif %}
+        unit_of_measurement: "°F"
+        unique_id: "20230306161301"
+        icon: mdi:water-percent-alert
+
+      - name: wind speed mph
+        state: >
+          {% set wind_kmh = states('sensor.wind_speed_kmh') %}
+          {% if wind_kmh in ['unknown', 'unavailable'] %}
+            0.0
+          {% else %}
+            {{ (wind_kmh | float / 1.609) | round(2) }}
+          {% endif %}
+        unique_id: "windspeednjmph"
+
+      - name: testsensor
+        state: "testing"
+        unique_id: "testing2"
+
+      - name: "totalrainin"
+        unique_id: "TotalRainin"
+        state_class: measurement
+        state: >
+          {{ states('sensor.rainfall_total_nj') | float }}
+
+      # sensor to compute rain so far today from today's total and yesterday's total
+      # sensor rain_day_1 is computed every night at midnight
+      # in automation.yaml, and published to topic ha/prior_days_rain
+      - name: DailyRain
+        unique_id: "DailyRain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float %}
+          {% set last_rain = states('sensor.rain_day_1') | float %}
+          {{ (totalrain - last_rain) | round(2) }}
+
+      - name: hourlyrain
+        unique_id: "hourlyrain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float %}
+          {% set last_hour = states('sensor.rain_hour_1') | float %}
+          {{ (totalrain - last_hour) | round(3) }}
+
+      - name: tenminrain
+        unique_id: "tenminrain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float %}
+          {% set last_ten = states('sensor.rain_ten_1') | float %}
+          {{ (totalrain - last_ten) | round(3) }}
+
+      - name: windcmpass
+        unique_id: windcompass
+        state: >
+          {% set windirdeg = states('sensor.wind_direction_nj') | float(0) %}
+          {% set index = (windirdeg / 22.5) | int(0) %}
+          {% set points = ["N","NNE","NE","ENE","E","ESE","SE","SSE",
+                           "S","SSW","SW","WSW","W","WNW","NW","NNW"] %}
+          {{ points[index % 16] }}
+
+  - binary_sensor:
+      - name: wetbasement
+        unique_id: wetbasemement
+        device_class: moisture
+        state: >
+          {% set officesouth = states('binary_sensor.water_leak_sensor_office_south_water') %}
+          {% set officecloset = states('binary_sensor.water_leak_sensor_office_closet_water') %}
+          {% set waterfront = states('binary_sensor.water_leak_sensor_water') %}
+          {% set watermiddlefront = states('binary_sensor.water_side_door') %}
+          {% if 'on' in [officesouth, officecloset, waterfront, watermiddlefront] %}
+            on
+          {% else %}
+            off
+          {% endif %}

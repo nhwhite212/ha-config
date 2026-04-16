@@ -1,0 +1,22 @@
+
+    value_template: >-
+      {% set T, RH =  value_json.temperature_C, value_json.humidity %}
+      {% if not (T == 'unknown')  or (RH == 'unknown') %}
+        'unknown'
+      {%- else %}
+        {% set T = T | float %}
+        {% set RH = RH | float %}
+        {% set a = 6.1121 | float %}
+        {% set b = 18.678 | float %}
+        {% set c = 257.14 | float %}
+        {% set d = 234.5 | float %}
+        {% set e = 2.71828 | float %}
+
+        {% set P = a*e**((b-T/d)*(T/(c+T))) | float %}
+        {% set gamma = log((RH / 100)*e**((b-T/d)*(T/(c+T)))) | float %}
+        {% set dew_temp = ((c * gamma) / (b - gamma))|round(3) %}
+        {{ dew_temp}}
+      {% endif %}
+    unit_of_measurement: "°C"
+
+    

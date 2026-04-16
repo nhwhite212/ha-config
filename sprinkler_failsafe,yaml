@@ -1,0 +1,17 @@
+alias: Sprinkler - force OFF on HA start
+description: Fail-safe in case HA restarts while sprinkler is running
+mode: single
+
+trigger:
+  - platform: homeassistant
+    event: start
+
+action:
+  - delay:
+      seconds: 15   # wait for entities to load
+
+  - service: switch.turn_off
+    target:
+      entity_id: switch.backyard_sprinkler
+     
+      

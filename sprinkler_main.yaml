@@ -1,0 +1,27 @@
+alias: Sprinklernj - run when soil is dry and no rain forecast
+description: Checks moisture and weather, runs for 30 min
+mode: single
+
+trigger:
+  - platform: time_pattern
+    minutes: "/30"   # checks every 30 minutes
+
+condition:
+  - condition: numeric_state
+    entity_id: sensor.Soil_Moisture_Median   # ← replace this
+    below: 40   # ← tune this threshold (%)
+
+
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.backyard_sprinkler      # ← replace this
+
+  - delay:
+      minutes: 30
+
+  - service: switch.turn_off
+    target:
+      entity_id: switch.backyard_sprinkler
+      
+      
