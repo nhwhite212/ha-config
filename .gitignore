@@ -25,7 +25,11 @@ tts/
 
 # Secrets (keep the template, not the values)
 secrets.yaml
+# the file with the githib key
+hakey
+# anything in .secrets
 
+.secrets
 # OS files
 .DS_Store
 Thumbs.db
