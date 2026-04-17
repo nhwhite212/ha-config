@@ -46,3 +46,4 @@ hatest.db
 *.db-wal
 zigbee.db
 notebooks/
+SERVICE_ACCOUNT.JSON
