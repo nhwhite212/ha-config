@@ -47,3 +47,8 @@ hatest.db
 zigbee.db
 notebooks/
 SERVICE_ACCOUNT.JSON
+zigbee.db
+.cache/
+.cloud/
+.ha_run.lock
+
