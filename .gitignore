@@ -52,3 +52,4 @@ zigbee.db
 .cloud/
 .ha_run.lock
 
+SERVICE_ACCOUNT.JSON
