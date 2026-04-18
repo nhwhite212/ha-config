@@ -1,0 +1,158 @@
+# Sprinkler Package
+# Schedule: Mon/Wed/Fri 5-8am
+# Conditions: wind < 3mph, soil moisture < 40%,
+#             rain last 24hrs < 0.25in, expected precip < 5mm
+# Runtime: 30 min per cycle, rechecks conditions after each cycle
+
+input_boolean:
+  sprinkler_running:
+    name: Sprinkler Running
+    icon: mdi:sprinkler
+
+  sprinkler_enabled:
+    name: Sprinkler System Enabled
+    icon: mdi:sprinkler-variant
+
+input_number:
+  sprinkler_run_count:
+    name: Sprinkler Run Count Today
+    min: 0
+    max: 10
+    step: 1
+    mode: box
+
+automation:
+  - id: sprinkler_check_and_run
+    alias: Sprinkler - Check conditions and run
+    description: >
+      Checks conditions Mon/Wed/Fri between 5-8am and runs sprinkler 
+      for 30 min if needed, then rechecks
+
+       - condition: state
+        entity_id: input_boolean.sprinkler_enabled
+        state: 'on'
+  
+    trigger:
+      - platform: time_pattern
+        minutes: "/30"
+    condition:
+      - condition: time
+        after: "05:00:00"
+        before: "08:00:00"
+        weekday:
+          - mon
+          - wed
+          - fri
+      - condition: numeric_state
+        entity_id: sensor.wind_speed_mph_2
+        below: 3
+      - condition: numeric_state
+        entity_id: sensor.soil_moisture_median
+        below: 40
+      - condition: numeric_state
+        entity_id: sensor.rain_in_last_24_hours
+        below: 0.25
+      - condition: numeric_state
+        entity_id: sensor.total_expected_precipitation_nj
+        below: 5
+      - condition: state
+        entity_id: input_boolean.sprinkler_running
+        state: "off"
+    action:
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.sprinkler_running
+      - service: switch.turn_on
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Sprinkler NJ
+          message: >
+            Sprinkler started. Soil: {{ states('sensor.soil_moisture_median') }}%,
+            Wind: {{ states('sensor.wind_speed_mph_2') }} mph,
+            Rain 24hr: {{ states('sensor.rain_in_last_24_hours') }} in
+      - delay:
+          minutes: 30
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.sprinkler_running
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Sprinkler NJ
+          message: Sprinkler cycle complete. Will recheck conditions in 30 minutes.
+    mode: single
+
+  - id: sprinkler_watchdog
+    alias: Sprinkler - Watchdog shutoff
+    description: Emergency shutoff if sprinkler runs more than 90 minutes
+    trigger:
+      - platform: state
+        entity_id: switch.backyard_sprinkler
+        to: "on"
+        for:
+          minutes: 90
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.sprinkler_running
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Sprinkler NJ - WARNING
+          message: Sprinkler watchdog triggered - shutoff after 90 minutes!
+    mode: single
+
+
+  - id: sprinkler_wind_shutoff
+    alias: Sprinkler - Emergency wind shutoff
+    description: Turn off sprinkler if wind exceeds 3mph while running
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.wind_speed_mph_2
+        above: 3
+    condition:
+      - condition: state
+        entity_id: switch.backyard_sprinkler
+        state: "on"
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.sprinkler_running
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Sprinkler NJ - WARNING
+          message: >
+            Sprinkler stopped - wind speed {{ states('sensor.wind_speed_mph_2') }} mph
+    mode: single
+
+
+  - id: soil_sensor_offline
+    alias: Soil Sensor Offline Alert
+    description: Notify when a soil sensor goes unavailable for more than 1 hour
+    trigger:
+      - platform: state
+        entity_id:
+          - sensor.soil_moisture_nj_a7
+          - sensor.soil_moisture_nj_2_c2
+          - sensor.soil_moisture_nj_3_89
+          - sensor.soil_moisture_nj_4_a3
+          - sensor.soil_moisture_nj_5_2f
+          - sensor.soil_moisture_nj_6_28
+        to: unavailable
+        for:
+          hours: 1
+    action:
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Soil Sensor Offline
+          message: "{{ trigger.to_state.name }} has been unavailable for 1 hour"
+    mode: parallel

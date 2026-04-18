@@ -208,6 +208,25 @@ template:
           {% set last_ten = states('sensor.rain_ten_1') | float(0) %}
           {{ (totalrain - last_ten) | round(3) }}
 
+      - name: "Soil Moisture Median"
+        unique_id: soil_moisture_median
+        unit_of_measurement: "%"
+        state: >
+          {% set readings = [
+            states('sensor.soil_moisture_nj_a7') | float(0),
+            states('sensor.soil_moisture_nj_2_c2') | float(0),
+            states('sensor.soil_moisture_nj_3_89') | float(0),
+            states('sensor.soil_moisture_nj_4_a3') | float(0),
+            states('sensor.soil_moisture_nj_5_2f') | float(0),
+            states('sensor.soil_moisture_nj_6_28') | float(0)
+          ] | select('>', 0) | list | sort %}
+          {% if readings | count > 0 %}
+            {{ ((readings[((readings|count) // 2) - 1] + readings[(readings|count) // 2]) / 2) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+    
+
       - name: windcompass
         unique_id: windcompass
         state: >
