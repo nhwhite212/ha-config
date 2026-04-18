@@ -155,7 +155,7 @@
     to: home
   condition: []
   action:
-  - service: notify.mobile_app_normans_iphone
+  - service: notify.mobile_app_baysidea
     data:
       title: Presence
       message: Norman has arrived home.
