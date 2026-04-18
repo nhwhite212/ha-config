@@ -1,0 +1,210 @@
+# Weather Package
+# Contains: MQTT weather sensors, statistics sensors,
+#           template sensors, rain tracking automations
+
+mqtt:
+  sensor:
+    - name: Wind Speed kph
+      unique_id: "windspeedNJ"
+      value_template: "{{ value_json.wind_avg_km_h | round(3) }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: Outside Temperature NJ
+      unique_id: "temp_deck"
+      unit_of_measurement: "°F"
+      state_class: measurement
+      value_template: "{{ value_json.temperature_F | round(2) }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg56
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg56
+
+    - name: Outside Humidity NJ
+      unique_id: "humidityNJ"
+      value_template: "{{ value_json.humidity }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg56
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg56
+      icon: mdi:water-percent-alert
+
+    - name: Rainfall Total NJ
+      unique_id: "RainfallNJ"
+      unit_of_measurement: "inches"
+      icon: mdi:weather-rainy
+      value_template: "{{ value_json.rain_in }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: Wind Direction NJ
+      unique_id: "WinDirNJ"
+      value_template: "{{ value_json.wind_dir_deg }}"
+      state_topic: rtl_433/Acurite-5n1/1727/msg49
+      json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
+
+    - name: rain_day_1
+      icon: mdi:water-percent-alert
+      unit_of_measurement: "inches"
+      unique_id: rain_day_1
+      value_template: "{{ value_json.day_1 }}"
+      state_topic: ha/prior_days_rain
+      json_attributes_topic: ha/prior_days_rain
+
+    - name: rain_hour_1
+      unit_of_measurement: "inches"
+      unique_id: rain_hour_1
+      value_template: "{{ value_json.hour_1 }}"
+      state_topic: ha/prior_hours_rain
+      json_attributes_topic: ha/prior_hours_rain
+
+    - name: rain_ten_1
+      unit_of_measurement: "inches"
+      unique_id: rain_ten_1
+      value_template: "{{ value_json.ten_1 }}"
+      state_topic: ha/prior_ten_rain
+      json_attributes_topic: ha/prior_ten_rain
+
+sensor:
+  - platform: noaa_tides
+    name: "Belfast tides"
+    station_id: 8415191
+    scan_interval: 360
+
+  - platform: statistics
+    name: "Temperature last 24 hours"
+    entity_id: sensor.outside_temperature_deck
+    state_characteristic: average_linear
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    unique_id: rain_in_last_24_hours
+    name: "Rain in last 24 hours"
+    entity_id: sensor.rainfall_total_nj
+    state_characteristic: sum_differences
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    unique_id: rain_in_last_48_hours
+    name: "Rain in last 48 hours"
+    entity_id: sensor.rainfall_total_nj
+    state_characteristic: sum_differences
+    max_age:
+      hours: 48
+
+  - platform: statistics
+    unique_id: max_wind_speed_last_24_hours
+    name: "Max wind speed in last 24 hours"
+    entity_id: sensor.wind_speed_mph_2
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: "Wind Speed Max 10min"
+    entity_id: sensor.wind_speed_mph_2
+    state_characteristic: value_max
+    max_age:
+      minutes: 10
+    sampling_size: 1000
+
+template:
+  - sensor:
+      - name: Dewpoint NJ
+        device_class: temperature
+        unique_id: "20230306161301"
+        unit_of_measurement: "°F"
+        icon: mdi:water-percent-alert
+        state: >
+          {% set T = states('sensor.outside_temperature_deck') %}
+          {% set RH = states('sensor.outside_humidity_nj') %}
+          {% if T in ['unknown', 'unavailable'] or RH in ['unknown', 'unavailable'] %}
+            0.0
+          {% else %}
+            {% set T = (((T | float - 32) * 5) / 9) %}
+            {% set RH = RH | float %}
+            {% set a = 6.1121 %}
+            {% set b = 18.678 %}
+            {% set c = 257.14 %}
+            {% set d = 234.5 %}
+            {% set e = 2.71828 %}
+            {% set gamma = log((RH / 100) * e ** ((b - T / d) * (T / (c + T)))) %}
+            {% set dew_temp = (c * gamma) / (b - gamma) %}
+            {% set DEWF = ((dew_temp * 9) / 5 + 32) | round(2, default=0) %}
+            {{ DEWF }}
+          {% endif %}
+
+      - name: wind speed mph
+        unique_id: "windspeednjmph"
+        state: >
+          {% set wind_kmh = states('sensor.wind_speed_kmh') %}
+          {% if wind_kmh in ['unknown', 'unavailable'] %}
+            0.0
+          {% else %}
+            {{ (wind_kmh | float / 1.609) | round(2) }}
+          {% endif %}
+
+      - name: totalrainin
+        unique_id: "TotalRainin"
+        state_class: measurement
+        state: >
+          {{ states('sensor.rainfall_total_nj') | float(0)}}
+
+      - name: DailyRain
+        unique_id: "DailyRain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
+          {% set last_rain = states('sensor.rain_day_1') | float(0) %}
+          {{ (totalrain - last_rain) | round(2) }}
+
+      - name: hourlyrrain
+        unique_id: "hourlyrrain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
+          {% set last_hour = states('sensor.rain_hour_1') | float(0) %}
+          {{ (totalrain - last_hour) | round(3) }}
+
+      - name: tenminrain
+        unique_id: "tenminrain"
+        state_class: measurement
+        state: >
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
+          {% set last_ten = states('sensor.rain_ten_1') | float(0) %}
+          {{ (totalrain - last_ten) | round(3) }}
+
+      - name: windcompass
+        unique_id: windcompass
+        state: >
+          {% set windirdeg = states('sensor.wind_direction_nj') | float(0) %}
+          {% set index = (windirdeg / 22.5) | int(0) %}
+          {% set points = ["N","NNE","NE","ENE","E","ESE","SE","SSE",
+                           "S","SSW","SW","WSW","W","WNW","NW","NNW"] %}
+          {{ points[index % 16] }}
+
+  - trigger:
+      - platform: time_pattern
+        hours: /1
+    action:
+      - service: weather.get_forecast
+        target:
+          entity_id: weather.openweathermap
+        data:
+          type: hourly
+        response_variable: my_forecast
+    sensor:
+      - name: Total Expected Precipitation NJ
+        unique_id: 8014e8d9-c606-4f7e-9f85-7df36996851f
+        icon: mdi:weather-pouring
+        unit_of_measurement: mm
+        state: >
+          {% set ns = namespace() %}
+          {% set ns.totalprecipitation = 0 %}
+          {% for daypart in range(0, 7) %}
+            {% set precipitation = my_forecast.forecast[daypart].precipitation %}
+            {% set precipitation_probability = my_forecast.forecast[daypart].precipitation_probability / 100 %}
+            {% if precipitation_probability > 0 %}
+              {% set precipitation = precipitation * precipitation_probability %}
+            {% endif %}
+            {% set ns.totalprecipitation = ns.totalprecipitation + precipitation %}
+          {% endfor %}
+          {{ ns.totalprecipitation | float(0) | round(2) }}

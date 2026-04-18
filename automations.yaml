@@ -1,95 +1,10 @@
-- id: '1624586003695'
-  alias: RTL433 MQTT message_type Demuxer
-  description: Split rtl_433/# signals into msg topics, if message_type exists
-  trigger:
-  - platform: mqtt
-    topic: rtl_433/+/+
-  condition:
-  - condition: template
-    value_template: '{{ trigger.payload_json.message_type != null }}'
-  action:
-  - service: mqtt.publish
-    data:
-      payload: '{{ trigger.payload }}'
-      topic: rtl_433/{{ trigger.payload_json.model or "UnknownModel" }}/{{ trigger.payload_json.id
-        or "UnknownId" }}/msg{{ trigger.payload_json.message_type }}
-  mode: single
 
 
 
 
-- id: '162458600366'
-  alias: RTL433 MQTT message_type unknown
-  description: Split rtl_433/# signals into msg topics, if no message_type
-  trigger:
-  - platform: mqtt
-    topic: rtl_433/+/+
-  condition:
-  - condition: template
-    value_template: '{{ trigger.payload_json.message_type == null }}'
-  action:
-  - service: mqtt.publish
-    data:
-      payload: '{{trigger.payload}}'
-      topic: rtl_433/{{trigger.payload_json.model or "UnknownModel"}}/{{trigger.payload_json.id
-        or "UnknownId"}}/nomsg
-  mode:  parallel
-  
 
 
-  
-- id: cumrain99
-  alias: record cumulative rain every midnight
-  description: Roll over yesterdays cumulative rain as day_1
-  trigger:
-  - platform: time_pattern
-    hours: '23'
-    minutes: '59'
-  condition: []
-  action:
-  - variables:
-      rainfall1:
-        day_1: '{{ states(''sensor.rainfall_total_nj'') }}'
-  - service: mqtt.publish
-    data:
-      payload: '{{ rainfall1 | to_json }}'
-      retain: true
-      topic: ha/prior_days_rain
-  mode: single
-- id: cumhourly
-  alias: record rain every hour as hour_1
-  description: collect hour rain total
-  trigger:
-  - platform: time_pattern
-    hours: /1
-  condition: []
-  action:
-  - variables:
-      rainfall2:
-        hour_1: '{{ states(''sensor.rainfall_total_nj'') }}'
-  - service: mqtt.publish
-    data:
-      payload: '{{ rainfall2 | to_json }}'
-      retain: true
-      topic: ha/prior_hours_rain
-  mode: single
-- id: cumten
-  alias: record rain every ten minutes as rain_10
-  description: collect ten min rain total
-  trigger:
-  - platform: time_pattern
-    minutes: /10
-  condition: []
-  action:
-  - variables:
-      rainfall10:
-        ten_1: '{{ states(''sensor.rainfall_total_nj'') }}'
-  - service: mqtt.publish
-    data:
-      payload: '{{ rainfall10 | to_json }}'
-      retain: true
-      topic: ha/prior_ten_rain
-  mode: single
+
 - id: '1705013309365'
   alias: Turn on Front Porch NJ
   description: Turn on the Front Porch light at dusk.
@@ -287,3 +202,36 @@
       message: Power loss in NJ
       title: Power down nj
   mode: single
+
+- id: '1624586003695'
+  alias: RTL433 MQTT message_type Demuxer
+  description: Split rtl_433/# signals into msg topics, if message_type exists
+  trigger:
+  - platform: mqtt
+    topic: rtl_433/+/+
+  condition:
+  - condition: template
+    value_template: '{{ trigger.payload_json.message_type is defined }}'
+  action:
+  - service: mqtt.publish
+    data:
+      payload: '{{ trigger.payload }}'
+      topic: 'rtl_433/{{ trigger.payload_json.model or "UnknownModel" }}/{{ trigger.payload_json.id or "UnknownId" }}/msg{{ trigger.payload_json.message_type }}'
+  mode: single
+
+- id: '162458600366'
+  alias: RTL433 MQTT message_type unknown
+  description: Split rtl_433/# signals into msg topics, if no message_type
+  trigger:
+  - platform: mqtt
+    topic: rtl_433/+/+
+  condition:
+  - condition: template
+    value_template: '{{ trigger.payload_json.message_type is not defined }}'
+  action:
+  - service: mqtt.publish
+    data:
+      payload: '{{trigger.payload}}'
+      topic: 'rtl_433/{{trigger.payload_json.model or "UnknownModel"}}/{{trigger.payload_json.id or "UnknownId"}}/nomsg'
+  mode: parallel
+  
