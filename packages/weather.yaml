@@ -61,6 +61,42 @@ mqtt:
       state_topic: ha/prior_ten_rain
       json_attributes_topic: ha/prior_ten_rain
 
+    - name: Soil_Moisture_NJ_a7
+      unique_id: "SoilMoistureNJa7"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e57a7/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e57a7/nomsg
+
+    - name: Soil Moisture NJ 2 c2
+      unique_id: "SoilMoistureNJc2"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e0cc2/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e0cc2/nomsg
+
+    - name: Soil Moisture NJ 3 89
+      unique_id: "SoilMoistureNJ89"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e5389/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e5389/nomsg
+
+    - name: Soil Moisture NJ 4 a3
+      unique_id: "SoilMoistureNJ4a3"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e0aa3/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e0aa3/nomsg
+
+    - name: Soil Moisture NJ 5 2f
+      unique_id: "SoilMoistureNJ52f"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0e562f/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0e562f/nomsg
+
+    - name: Soil Moisture NJ 6 28
+      unique_id: "SoilMoistureNJ6 28"
+      value_template: "{{ value_json.moisture }}"
+      state_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
+
 sensor:
   - platform: noaa_tides
     name: "Belfast tides"

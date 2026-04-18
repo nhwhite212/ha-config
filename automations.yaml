@@ -211,7 +211,7 @@
     topic: rtl_433/+/+
   condition:
   - condition: template
-    value_template: '{{ trigger.payload_json.message_type is defined }}'
+    value_template: '{{ trigger.payload_json.message_type != null }}'
   action:
   - service: mqtt.publish
     data:
@@ -227,7 +227,7 @@
     topic: rtl_433/+/+
   condition:
   - condition: template
-    value_template: '{{ trigger.payload_json.message_type is not defined }}'
+    value_template: '{{ trigger.payload_json.message_type == null}}'
   action:
   - service: mqtt.publish
     data:
