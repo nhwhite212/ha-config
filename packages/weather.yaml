@@ -91,11 +91,11 @@ mqtt:
       state_topic: rtl_433/Fineoffset-WH51/0e562f/nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0e562f/nomsg
 
-    - name: Soil Moisture NJ 6 28
-      unique_id: "SoilMoistureNJ6 28"
+    - name: Soil Moisture NJ 6 f2
+      unique_id: "SoilMoistureNJ6 f2"
       value_template: "{{ value_json.moisture }}"
-      state_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
-      json_attributes_topic: rtl_433/Fineoffset-WH51/0ee028/nomsg
+      state_topic: rtl_433/Fineoffset-WH51/0ee02f2nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
 
 sensor:
   - platform: noaa_tides
