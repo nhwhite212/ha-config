@@ -7,7 +7,7 @@ trigger:
     entity_id: switch.YOUR_SPRINKLER_PLUG         # ← replace this
     to: "on"
     for:
-      minutes: 35
+      minutes: 120
 
 action:
   - service: switch.turn_off
@@ -16,4 +16,4 @@ action:
 
   - service: notify.notify   # optional alert
     data:
-      message: "Sprinkler watchdog triggered — turned off after 35 min"
+      message: "Sprinkler watchdog triggered — turned off after 120 min"

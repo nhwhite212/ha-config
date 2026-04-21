@@ -1,6 +1,6 @@
 # Weather Package
 # Contains: MQTT weather sensors, statistics sensors,
-# template sensors, rain tracking automations
+#           template sensors, rain tracking automations
 
 mqtt:
   sensor:
@@ -39,7 +39,6 @@ mqtt:
       state_topic: rtl_433/Acurite-5n1/1727/msg49
       json_attributes_topic: rtl_433/Acurite-5n1/1727/msg49
 
-    # Rain baseline sensors - values published by the automation below
     - name: rain_day_1
       icon: mdi:water-percent-alert
       unit_of_measurement: "inches"
@@ -62,7 +61,6 @@ mqtt:
       state_topic: ha/prior_ten_rain
       json_attributes_topic: ha/prior_ten_rain
 
-    # Soil moisture sensors
     - name: Soil_Moisture_NJ_a7
       unique_id: "SoilMoistureNJa7"
       value_template: "{{ value_json.moisture }}"
@@ -96,8 +94,7 @@ mqtt:
     - name: Soil Moisture NJ 6 f2
       unique_id: "SoilMoistureNJ6f2"
       value_template: "{{ value_json.moisture }}"
-      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
-      state_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
+      state_topic: rtl_433/Fineoffset-WH51/0ee02f2nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
 
 sensor:
@@ -185,34 +182,31 @@ template:
         unique_id: "TotalRainin"
         state_class: measurement
         state: >
-          {{ states('sensor.rainfall_total_nj') | float(0) }}
+          {{ states('sensor.rainfall_total_nj') | float(0)}}
 
       - name: DailyRain
         unique_id: "DailyRain"
-        unit_of_measurement: "inches"
         state_class: measurement
         state: >
-          {% set totalrain = states('sensor.rainfall_total_nj') | float(0) %}
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
           {% set last_rain = states('sensor.rain_day_1') | float(0) %}
-          {{ [totalrain - last_rain, 0] | max | round(2) }}
+          {{ (totalrain - last_rain) | round(2) }}
 
       - name: hourlyrrain
         unique_id: "hourlyrrain"
-        unit_of_measurement: "inches"
         state_class: measurement
         state: >
-          {% set totalrain = states('sensor.rainfall_total_nj') | float(0) %}
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
           {% set last_hour = states('sensor.rain_hour_1') | float(0) %}
-          {{ [totalrain - last_hour, 0] | max | round(3) }}
+          {{ (totalrain - last_hour) | round(3) }}
 
       - name: tenminrain
         unique_id: "tenminrain"
-        unit_of_measurement: "inches"
         state_class: measurement
         state: >
-          {% set totalrain = states('sensor.rainfall_total_nj') | float(0) %}
+          {% set totalrain = states('sensor.rainfall_total_nj') | float(0)%}
           {% set last_ten = states('sensor.rain_ten_1') | float(0) %}
-          {{ [totalrain - last_ten, 0] | max | round(3) }}
+          {{ (totalrain - last_ten) | round(3) }}
 
       - name: "Soil Moisture Median"
         unique_id: soil_moisture_median
@@ -224,13 +218,14 @@ template:
             states('sensor.soil_moisture_nj_3_89') | float(0),
             states('sensor.soil_moisture_nj_4_a3') | float(0),
             states('sensor.soil_moisture_nj_5_2f') | float(0),
-            states('sensor.soil_moisture_nj_6_f2') | float(0)
+            states('sensor.soil_moisture_nj_6_28') | float(0)
           ] | select('>', 0) | list | sort %}
           {% if readings | count > 0 %}
             {{ ((readings[((readings|count) // 2) - 1] + readings[(readings|count) // 2]) / 2) | round(1) }}
           {% else %}
             0
           {% endif %}
+    
 
       - name: windcompass
         unique_id: windcompass
@@ -268,41 +263,3 @@ template:
             {% set ns.totalprecipitation = ns.totalprecipitation + precipitation %}
           {% endfor %}
           {{ ns.totalprecipitation | float(0) | round(2) }}
-
-automation:
-  - id: publish_rain_baselines
-    alias: Publish rain baselines to MQTT
-    description: >
-      Every 10 min: snapshot total rain for 10min delta.
-      On the hour: snapshot for hourly delta.
-      At midnight: snapshot for daily delta.
-    trigger:
-      - platform: time_pattern
-        minutes: "/10"
-    action:
-      - service: mqtt.publish
-        data:
-          topic: ha/prior_ten_rain
-          payload: '{"ten_1": {{ states("sensor.rainfall_total_nj") | float(0) }}}'
-          retain: true
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ now().minute == 0 }}"
-            sequence:
-              - service: mqtt.publish
-                data:
-                  topic: ha/prior_hours_rain
-                  payload: '{"hour_1": {{ states("sensor.rainfall_total_nj") | float(0) }}}'
-                  retain: true
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ now().hour == 0 and now().minute == 0 }}"
-            sequence:
-              - service: mqtt.publish
-                data:
-                  topic: ha/prior_days_rain
-                  payload: '{"day_1": {{ states("sensor.rainfall_total_nj") | float(0) }}}'
-                  retain: true
-    mode: single

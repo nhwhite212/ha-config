@@ -18,7 +18,7 @@ action:
       entity_id: switch.backyard_sprinkler      # ← replace this
 
   - delay:
-      minutes: 30
+      minutes: 120
 
   - service: switch.turn_off
     target:
