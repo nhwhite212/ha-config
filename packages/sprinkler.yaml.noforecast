@@ -40,6 +40,15 @@ input_number:
     icon: mdi:weather-rainy
     initial: 0.25
 
+  sprinkler_forecast_threshold:
+    name: Sprinkler max forecast rain
+    min: 0
+    max: 25
+    step: 1
+    unit_of_measurement: "mm"
+    icon: mdi:weather-pouring
+    initial: 5
+
   sprinkler_run_duration:
     name: Sprinkler run duration
     min: 1
@@ -111,6 +120,10 @@ automation:
         value_template: >
           {{ states('sensor.rain_in_last_24_hours') | float(99)
              < states('input_number.sprinkler_rain_24h_threshold') | float }}
+      - condition: template
+        value_template: >
+          {{ states('sensor.total_expected_precipitation_nj') | float(99)
+             < states('input_number.sprinkler_forecast_threshold') | float }}
     action:
       - service: input_boolean.turn_on
         target:
@@ -168,6 +181,10 @@ automation:
         value_template: >
           {{ states('sensor.rain_in_last_24_hours') | float(99)
              < states('input_number.sprinkler_rain_24h_threshold') | float }}
+      - condition: template
+        value_template: >
+          {{ states('sensor.total_expected_precipitation_nj') | float(99)
+             < states('input_number.sprinkler_forecast_threshold') | float }}
     action:
       - service: input_boolean.turn_on
         target:
@@ -255,7 +272,7 @@ automation:
           # - sensor.soil_moisture_nj_3_89
           - sensor.soil_moisture_nj_4_a3
           - sensor.soil_moisture_nj_5_2f
-          # - sensor.soil_moisture_nj_6_f2
+          - sensor.soil_moisture_nj_6_f2
         to: unavailable
         for:
           hours: 1
