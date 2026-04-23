@@ -100,6 +100,35 @@ mqtt:
       state_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
 
+
+    - name: Soil Moisture NJ 7 46
+      unique_id: "SoilMoistureNJ746"
+      value_template: "{{ value_json.moisture }}"
+      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
+      state_topic: rtl_433/Fineoffset-WH51/0f5146/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0f5146/nomsg
+
+
+
+    - name: Soil Moisture NJ 8 00
+      unique_id: "SoilMoistureNJ800"
+      value_template: "{{ value_json.moisture }}"
+      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
+      state_topic: rtl_433/Fineoffset-WH51/0f4e00/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0f4e00/nomsg
+
+
+
+    - name: Soil Moisture NJ 9 f7
+      unique_id: "SoilMoistureNJ9f7"
+      value_template: "{{ value_json.moisture }}"
+      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
+      state_topic: rtl_433/Fineoffset-WH51/0f4cf7/nomsg
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0f4cf7nomsg
+
+
+
+
 sensor:
   - platform: noaa_tides
     name: "Belfast tides"
@@ -197,7 +226,7 @@ template:
           {{ [totalrain - last_rain, 0] | max | round(2) }}
 
       - name: hourlyrrain
-        unique_id: "hourlyrrain"
+        unique_id: "hourlyrain"
         unit_of_measurement: "inches"
         state_class: measurement
         state: >

@@ -1,7 +1,7 @@
 # Sprinkler Package
 # Schedule: Mon/Wed/Fri, configurable start/end hour
-# All thresholds configurable via input_number helpers
-# Dashboard: add Entities card with all input_number/input_boolean entities
+# All thresholds configurable via input_number helpers on the dashboard
+# No forecast condition - uses local sensors only
 
 input_boolean:
   sprinkler_running:
@@ -74,7 +74,37 @@ input_number:
     step: 1
     mode: box
 
+script:
+  sprinkler_emergency_stop:
+    alias: "Sprinkler Emergency Stop"
+    icon: mdi:stop-circle
+    sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.sprinkler_running
+      - service: notify.mobile_app_baysidea
+        data:
+          title: Sprinkler NJ
+          message: "Emergency stop triggered - sprinkler off"
+
 automation:
+  - id: sprinkler_reset_on_start
+    alias: Sprinkler - Reset on HA startup
+    description: Ensures valve and running flag are always off after a reboot
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.sprinkler_running
+
   - id: sprinkler_check_and_run
     alias: Sprinkler - Check conditions and run
     description: >
