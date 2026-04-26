@@ -285,7 +285,10 @@ automation:
           # - sensor.soil_moisture_nj_3_89
           - sensor.soil_moisture_nj_4_a3
           - sensor.soil_moisture_nj_5_2f
-          # - sensor.soil_moisture_nj_6_f2
+          - sensor.soil_moisture_nj_6_f2_2
+          - sensor.soil_moisture_nj_7_46
+          - sensor.soil_moisture_nj_8_00
+          - sensor.soil_moisture_nj_9_f7
         to: unavailable
         for:
           hours: 1

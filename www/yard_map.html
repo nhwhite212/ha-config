@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yard Moisture Map</title>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="info"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// CONFIGURATION — edit everything in this block
+// ═══════════════════════════════════════════════════════════════════
+
+// Home Assistant connection
+const HA_URL   = 'http://100.68.69.68:8123';
+const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhYTMxODc1NjFlNTQ0ZTMyYWUwOTgyYzc2MzUxMDZkZCIsImlhdCI6MTc3Njk4MTE3OCwiZXhwIjoyMDkyMzQxMTc4fQ.UoqIQ5d164_8nuJ4NsO_Or_iTBR0DsOhr2VROrxAbEY';            // Paste your Long-Lived Access Token here;
+
+// Yard dimensions in feet
+const YARD_W = 60;   // width (left to right)
+const YARD_H = 82;   // height (bottom to top)
+
+// Canvas size in pixels — adjust until it looks right on your tablet
+const CANVAS_W = 400;   // try 300, 400, 500
+const CANVAS_H = 550;   // try 400, 550, 700
+
+// Font size for labels — increase if too small
+const FONT_SIZE = 14;   // try 10, 12, 14, 16
+
+// Sensor dot size in pixels
+const DOT_SIZE = 36;    // try 28, 36, 44
+
+// Sprinkler position (feet from bottom-left) and spray radius (feet)
+const SPR_X = 12;
+const SPR_Y = 40;
+const SPR_R = 40;       // spray radius in feet — update after measuring
+
+// Soil sensors — entity ID, label, position in feet from bottom-left
+const SENSOR_DEFS = [
+  { id: 'sensor.soil_moisture_nj_9_f7', label: 'f7', x: 22, y: 20 },
+  { id: 'sensor.soil_moisture_nj_5_2f', label: '2f', x:  4, y: 24 },
+  { id: 'sensor.soil_moisture_nj_8_00', label: '00', x: 18, y: 70 },
+  { id: 'sensor.soil_moisture_nj_7_46', label: '46', x: 35, y: 62 },
+  { id: 'sensor.soil_moisture_nj_6_f2_2', label: 'f2', x: 49, y: 26 },
+];
+
+// Sketch features — set visible: false to hide any feature
+const FEATURES = [
+  { type: 'rect', label: 'Shrubs',  x:  0, y:  0, w: 12, h: 82, fill: 'rgba(40,100,40,0.45)',   stroke: 'rgba(80,200,80,1)',   labelColor: 'rgba(120,255,120,1)', rotate: true,  visible: true },
+  { type: 'rect', label: 'Flowers', x: 42, y:  0, w: 12, h: 66, fill: 'rgba(160,50,110,0.35)',  stroke: 'rgba(255,130,200,1)', labelColor: 'rgba(255,160,220,1)', rotate: true,  visible: true },
+  { type: 'rect', label: 'Garage',  x: 48, y: 66, w: 10, h: 16, fill: 'rgba(80,80,80,0.55)',    stroke: 'rgba(220,220,220,1)', labelColor: 'rgba(220,220,220,1)', rotate: false, visible: true },
+  { type: 'text', label: '🍎',      x: 40, y:  5, visible: true },
+  { type: 'text', label: '▼ House', x: 30, y:  1, visible: true, color: 'rgba(200,160,100,0.9)' },
+];
+
+// How often to refresh sensor data (milliseconds)
+const REFRESH_MS = 60000;  // 60 seconds
+
+// ═══════════════════════════════════════════════════════════════════
+// END CONFIGURATION — do not edit below this line
+// ═══════════════════════════════════════════════════════════════════
+
+window.sensorData = SENSOR_DEFS.map(s => ({ ...s, moisture: 50 }));
+const scaleX = CANVAS_W / YARD_W;
+const scaleY = CANVAS_H / YARD_H;
+
+function cX(x) { return x * scaleX; }
+function cY(y) { return (YARD_H - y) * scaleY; }
+
+// Set up canvas
+const cv = document.getElementById('cv');
+cv.width  = CANVAS_W;
+cv.height = CANVAS_H;
+cv.style.display = 'block';
+cv.style.border = '1px solid #444';
+cv.style.borderRadius = '6px';
+document.body.style.background = '#1a1a1a';
+document.body.style.padding = '12px';
+document.body.style.fontFamily = 'monospace';
+document.body.style.color = '#e0e0e0';
+
+function idw(px, py, power=2) {
+  let num=0, den=0;
+  for (const s of window.sensorData) {
+    const sy = YARD_H - s.y;
+    const d = Math.sqrt((s.x-px)**2 + (sy-py)**2);
+    if (d < 0.001) return s.moisture;
+    const w = 1/d**power;
+    num += w*s.moisture; den += w;
+  }
+  return den===0 ? 50 : num/den;
+}
+
+function mCol(v) {
+  const t = Math.max(0, Math.min(1, v/100));
+  if (t<0.25) { const u=t/0.25; return [220+u*15,50+u*150,20+u*30]; }
+  if (t<0.5)  { const u=(t-0.25)/0.25; return [235-u*235,200-u*60,50+u*50]; }
+  if (t<0.75) { const u=(t-0.5)/0.25; return [0,140+u*60,100+u*100]; }
+  const u=(t-0.75)/0.25; return [0,200-u*60,200+u*55];
+}
+
+function draw() {
+  const ctx = cv.getContext('2d');
+  const CW=CANVAS_W, CH=CANVAS_H;
+  const res=3, cols=Math.ceil(CW/res), rows=Math.ceil(CH/res);
+
+  // 1. Moisture contour
+  const img = ctx.createImageData(cols*res, rows*res);
+  for (let r=0; r<rows; r++) for (let c=0; c<cols; c++) {
+    const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+    const v=idw(px,py);
+    const [r2,g,b]=mCol(v);
+    for (let dy=0;dy<res;dy++) for (let dx=0;dx<res;dx++) {
+      const i=((r*res+dy)*cols*res+(c*res+dx))*4;
+      img.data[i]=r2; img.data[i+1]=g; img.data[i+2]=b; img.data[i+3]=210;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // 2. Contour lines
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=0.5;
+  for (let lv=20; lv<=80; lv+=20) {
+    ctx.beginPath();
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+      const v=idw(px,py), vr=idw(((c+1)/cols)*YARD_W,py), vd=idw(px,((r+1)/rows)*YARD_H);
+      if ((v-lv)*(vr-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo((c+1)*res,r*res); }
+      if ((v-lv)*(vd-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo(c*res,(r+1)*res); }
+    }
+    ctx.stroke();
+  }
+
+  // 3. Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=0.5;
+  for (let x=0;x<=YARD_W;x+=10) { ctx.beginPath();ctx.moveTo(cX(x),0);ctx.lineTo(cX(x),CH);ctx.stroke(); }
+  for (let y=0;y<=YARD_H;y+=10) { ctx.beginPath();ctx.moveTo(0,cY(y));ctx.lineTo(CW,cY(y));ctx.stroke(); }
+
+  // 4. Sketch features
+  ctx.save();
+  for (const f of FEATURES) {
+    if (!f.visible) continue;
+    if (f.type === 'rect') {
+      ctx.fillStyle = f.fill;
+      ctx.fillRect(cX(f.x), cY(f.y+f.h), cX(f.w), cY(f.y)-cY(f.y+f.h));
+      ctx.strokeStyle = f.stroke;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cX(f.x)+1, cY(f.y+f.h)+1, cX(f.w)-2, cY(f.y)-cY(f.y+f.h)-2);
+      if (f.label) {
+        ctx.save();
+        ctx.fillStyle = f.labelColor;
+        ctx.font = `bold ${FONT_SIZE}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const lx = cX(f.x + f.w/2);
+        const ly = cY(f.y + f.h/2);
+        if (f.rotate) { ctx.translate(lx,ly); ctx.rotate(-Math.PI/2); ctx.fillText(f.label,0,0); }
+        else { ctx.fillText(f.label, lx, ly); }
+        ctx.restore();
+      }
+    } else if (f.type === 'text') {
+      ctx.fillStyle = f.color || 'rgba(255,255,255,0.8)';
+      ctx.font = `bold ${FONT_SIZE+2}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(f.label, cX(f.x), cY(f.y));
+    }
+  }
+  ctx.restore();
+
+  // 5. Sprinkler coverage circle
+  const cx=cX(SPR_X), cy=cY(SPR_Y);
+  const avgScale=(scaleX+scaleY)/2;
+  const rv=SPR_R*avgScale;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rv, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(96,165,250,0.8)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([6,4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Sprinkler dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 10, 0, Math.PI*2);
+  ctx.fillStyle='#3b82f6';
+  ctx.fill();
+  ctx.strokeStyle='white'; ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.fillStyle='white';
+  ctx.font=`${FONT_SIZE+2}px monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('💧', cx, cy);
+
+  // 6. Sensor dots
+  for (const s of window.sensorData) {
+    const sx=cX(s.x), sy=cY(s.y);
+    const [r,g,b]=mCol(s.moisture);
+    const r2=DOT_SIZE/2;
+    ctx.beginPath();
+    ctx.arc(sx, sy, r2, 0, Math.PI*2);
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.fillStyle='#111';
+    ctx.font=`bold ${FONT_SIZE-2}px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(s.label, sx, sy-5);
+    ctx.fillText(Math.round(s.moisture)+'%', sx, sy+6);
+  }
+
+  // 7. Axis labels
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.font=`${FONT_SIZE-1}px monospace`;
+  ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.fillText('0,0', 3, CH-2);
+  ctx.textAlign='right';
+  ctx.fillText(YARD_W+'ft', CW-2, CH-2);
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(YARD_H+'ft', 3, 2);
+
+  // 8. Update info panel
+  const info = document.getElementById('info');
+  info.style.marginTop = '10px';
+  info.style.fontSize = FONT_SIZE+'px';
+  info.innerHTML = window.sensorData.map(s => {
+    const [r,g,b]=mCol(s.moisture);
+    return `<span style="color:rgb(${r},${g},${b});margin-right:12px"><b>${s.label}</b>: ${Math.round(s.moisture)}%</span>`;
+  }).join('') + `<span style="color:#555;float:right" id="ts"></span>`;
+}
+
+async function fetchData() {
+  try {
+    const results = await Promise.all(
+      SENSOR_DEFS.map(s =>
+        fetch(`${HA_URL}/api/states/${s.id}`, {
+          headers: { Authorization: `Bearer ${HA_TOKEN}`, 'Content-Type': 'application/json' }
+        }).then(r => r.json())
+      )
+    );
+    window.sensorData = SENSOR_DEFS.map((s, i) => ({
+      ...s,
+      moisture: parseFloat(results[i].state) || 0
+    }));
+    draw();
+    const ts = document.getElementById('ts');
+    if (ts) ts.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    console.error('Fetch error:', e);
+  }
+}
+
+draw();
+fetchData();
+setInterval(fetchData, REFRESH_MS);
+</script>
+</body>
+</html>

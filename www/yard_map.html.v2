@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yard Moisture Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: #1a1a1a; color: #e0e0e0; padding: 12px; min-height: 100vh; }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #f0f0f0; }
+  p.sub { font-size: 11px; color: #888; margin-top: 2px; }
+  #header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  #controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button { font-size: 11px; padding: 4px 10px; border: 1px solid #444; border-radius: 4px; background: transparent; color: #aaa; cursor: pointer; }
+  button.active { background: #1e3a5f; color: #60a5fa; border-color: #3b82f6; }
+  #status { font-size: 10px; color: #666; margin-bottom: 6px; }
+  #status.ok { color: #4ade80; }
+  #status.err { color: #f87171; }
+  #yard-wrap { position: relative; display: inline-block; width: 100%; }
+  canvas { display: block; border-radius: 4px; border: 1px solid #333; width: 100%; }
+  #overlay-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .sdot { position: absolute; width: 32px; height: 32px; border-radius: 50%; transform: translate(-50%,-50%); pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.5); font-size: 8px; font-weight: 700; color: #111; line-height: 1.3; border: 2px solid rgba(255,255,255,0.8); }
+  #spring { position: absolute; border-radius: 50%; border: 1.5px dashed rgba(96,165,250,0.5); pointer-events: none; transform: translate(-50%,-50%); }
+  #sprdot { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #3b82f6; border: 2px solid white; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); pointer-events: none; }
+  #legend { display: flex; align-items: center; gap: 8px; margin: 10px 0 8px; }
+  #legend span { font-size: 10px; color: #666; }
+  #legbar { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, rgb(220,50,20), rgb(235,200,50), rgb(0,200,50), rgb(0,140,255)); }
+  #tbl h3 { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 6px; }
+  .tgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+  .tc { padding: 6px 8px; border-radius: 4px; border: 1px solid #2a2a2a; background: #222; }
+  .tc .tn { font-size: 10px; font-weight: 700; color: #e0e0e0; }
+  .tc .tv { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .tc .tp { font-size: 9px; color: #666; }
+  #refresh { font-size: 10px; color: #555; margin-top: 8px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h2>Yard Moisture Map</h2>
+    <p class="sub">53 × 82 ft · updates every 60 seconds</p>
+  </div>
+  <div id="controls">
+    <button id="btn-cov" class="active" onclick="toggleCov()">Coverage</button>
+    <button id="btn-sketch" class="active" onclick="toggleSketch()">Sketch</button>
+    <button onclick="fetchData()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="status">Connecting to Home Assistant...</div>
+
+<div id="yard-wrap">
+  <canvas id="cv"></canvas>
+  <svg id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="spring"></div>
+  <div id="sprdot">💧</div>
+</div>
+
+<div id="legend"><span>Dry</span><div id="legbar"></div><span>Wet</span></div>
+
+<div id="tbl">
+  <h3>Live sensor readings</h3>
+  <div class="tgrid" id="tg"></div>
+</div>
+
+<div id="refresh">Last updated: —</div>
+
+<script>
+// ── CONFIGURATION ─────────────────────────────────────────────────────────────
+var sensorData = [];
+sensorData = SENSORS.map(s => ({ ...s, moisture: 50 }));
+const HA_URL   = 'http://100.68.69.68:8123';
+const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlMzc3MzM3MjUyZjc0ZTRiOGZhOTBiMDFkYWY4Y2I2MiIsImlhdCI6MTc3Njk3ODMxNiwiZXhwIjoyMDkyMzM4MzE2fQ.u-wECEj32ixqt5lBSUmoqSaoiseb6hf8sKoXOASTSYg';              // Paste your Long-Lived Access Token here;   // ← paste your Long-Lived Access Token here
+
+const SENSORS = [
+  { id: 'sensor.soil_moisture_nj_9_f7', label: 'f7', x: 22, y: 20 },
+  { id: 'sensor.soil_moisture_nj_5_2f', label: '2f', x: 4,  y: 24 },
+  { id: 'sensor.soil_moisture_nj_8_00', label: '00', x: 18, y: 70 },
+  { id: 'sensor.soil_moisture_nj_7_46', label: '46', x: 30, y: 62 },
+  { id: 'sensor.soil_moisture_nj_6_f2', label: 'f2', x: 42, y: 26 },
+];
+
+const SPRINKLER = { x: 12, y: 55, radius: 40 };
+const YARD_W = 53, YARD_H = 82;
+// ─────────────────────────────────────────────────────────────────────────────
+
+let showCov = true, showSketch = true;
+let scale = 1;
+let sensorData = SENSORS.map(s => ({ ...s, moisture: 50 }));
+
+// ── Yard features (in feet from bottom-left) ──────────────────────────────────
+function drawSketch(svg, sc) {
+  svg.innerHTML = '';
+  if (!showSketch) return;
+
+  function ft2cx(x) { return x * sc; }
+  function ft2cy(y) { return (YARD_H - y) * sc; }
+
+  function rect(x, y, w, h, fill, stroke, label, labelX, labelY, rotate) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    el.setAttribute('x', ft2cx(x)); el.setAttribute('y', ft2cy(y+h));
+    el.setAttribute('width', w*sc); el.setAttribute('height', h*sc);
+    el.setAttribute('fill', fill); el.setAttribute('stroke', stroke);
+    el.setAttribute('stroke-width', '1'); el.setAttribute('rx', '3');
+    svg.appendChild(el);
+    if (label) {
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', ft2cx(labelX)); t.setAttribute('y', ft2cy(labelY));
+      t.setAttribute('fill', stroke); t.setAttribute('font-size', Math.max(8, sc*1.4));
+      t.setAttribute('font-family', 'Courier New, monospace');
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
+      if (rotate) t.setAttribute('transform', `rotate(-90, ${ft2cx(labelX)}, ${ft2cy(labelY)})`);
+      t.textContent = label;
+      svg.appendChild(t);
+    }
+  }
+
+  function circle(x, y, r, fill, stroke, label) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    el.setAttribute('cx', ft2cx(x)); el.setAttribute('cy', ft2cy(y));
+    el.setAttribute('r', r*sc); el.setAttribute('fill', fill); el.setAttribute('stroke', stroke);
+    el.setAttribute('stroke-width', '1');
+    svg.appendChild(el);
+    if (label) {
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', ft2cx(x)); t.setAttribute('y', ft2cy(y-r-0.5));
+      t.setAttribute('fill', stroke); t.setAttribute('font-size', Math.max(7, sc*1.2));
+      t.setAttribute('font-family', 'Courier New, monospace');
+      t.setAttribute('text-anchor', 'middle');
+      t.textContent = label;
+      svg.appendChild(t);
+    }
+  }
+
+  function line(x1,y1,x2,y2,stroke) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+    el.setAttribute('x1',ft2cx(x1));el.setAttribute('y1',ft2cy(y1));
+    el.setAttribute('x2',ft2cx(x2));el.setAttribute('y2',ft2cy(y2));
+    el.setAttribute('stroke',stroke);el.setAttribute('stroke-width','0.5');
+    el.setAttribute('stroke-dasharray','3,3');
+    svg.appendChild(el);
+  }
+
+  // Shrub bed — left side, full height
+  rect(0, 0, 12, 82, 'rgba(34,85,34,0.25)', 'rgba(60,140,60,0.7)', 'Shrubs', 6, 41, true);
+
+  // Flower bed — right side, full height (below garage)
+  rect(41, 0, 12, 62, 'rgba(180,60,120,0.18)', 'rgba(220,100,160,0.6)', 'Flowers', 47, 31, true);
+
+  // Garage — top right
+  rect(39, 62, 12, 20, 'rgba(80,80,80,0.35)', 'rgba(160,160,160,0.8)', 'Garage', 45, 72, false);
+
+  // House — bottom, shown as a band
+  rect(0, -6, 53, 6, 'rgba(80,60,40,0.4)', 'rgba(160,120,80,0.8)', 'House', 26.5, -3, false);
+
+  // Apple tree
+  circle(42, 5, 3, 'rgba(60,120,40,0.3)', 'rgba(80,160,60,0.8)', '🍎');
+
+  // Lawn boundary dashes
+  line(12, 0, 12, 82, 'rgba(255,255,255,0.1)');
+  line(41, 0, 41, 62, 'rgba(255,255,255,0.1)');
+}
+
+async function fetchData() {
+  const status = document.getElementById('status');
+  try {
+    const results = await Promise.all(
+      SENSORS.map(s =>
+        fetch(`${HA_URL}/api/states/${s.id}`, {
+          headers: { Authorization: `Bearer ${HA_TOKEN}`, 'Content-Type': 'application/json' }
+        }).then(r => r.json())
+      )
+    );
+    sensorData = SENSORS.map((s, i) => ({
+      ...s,
+      moisture: parseFloat(results[i].state) || 0
+    }));
+    status.textContent = 'Connected ✓';
+    status.className = 'ok';
+    document.getElementById('refresh').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+    draw();
+  } catch(e) {
+    status.textContent = 'Error connecting to HA — check token and URL';
+    status.className = 'err';
+  }
+}
+
+function cY(yFt) { return (YARD_H - yFt) * scale; }
+
+function idw(px, py, power=2) {
+  let num=0, den=0;
+  for (const s of sensorData) {
+    const sy = YARD_H - s.y;
+    const d = Math.sqrt((s.x-px)**2 + (sy-py)**2);
+    if (d < 0.001) return s.moisture;
+    const w = 1/d**power;
+    num += w*s.moisture; den += w;
+  }
+  return den===0 ? 50 : num/den;
+}
+
+function mCol(v) {
+  const t = Math.max(0, Math.min(1, v/100));
+  if (t<0.25) { const u=t/0.25; return [220+u*15,50+u*150,20+u*30]; }
+  if (t<0.5)  { const u=(t-0.25)/0.25; return [235-u*235,200-u*60,50+u*50]; }
+  if (t<0.75) { const u=(t-0.5)/0.25; return [0,140+u*60,100+u*100]; }
+  const u=(t-0.75)/0.25; return [0,200-u*60,200+u*55];
+}
+
+function draw() {
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const CW=cv.width, CH=cv.height;
+  const res=3, cols=Math.ceil(CW/res), rows=Math.ceil(CH/res);
+  const img = ctx.createImageData(cols*res, rows*res);
+
+  for (let r=0; r<rows; r++) for (let c=0; c<cols; c++) {
+    const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+    const v=idw(px,py);
+    const [r2,g,b]=mCol(v);
+    for (let dy=0;dy<res;dy++) for (let dx=0;dx<res;dx++) {
+      const i=((r*res+dy)*cols*res+(c*res+dx))*4;
+      img.data[i]=r2; img.data[i+1]=g; img.data[i+2]=b; img.data[i+3]=210;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // contour lines
+  ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=0.5;
+  for (let lv=20; lv<=80; lv+=20) {
+    ctx.beginPath();
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+      const v=idw(px,py), vr=idw(((c+1)/cols)*YARD_W,py), vd=idw(px,((r+1)/rows)*YARD_H);
+      if ((v-lv)*(vr-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo((c+1)*res,r*res); }
+      if ((v-lv)*(vd-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo(c*res,(r+1)*res); }
+    }
+    ctx.stroke();
+  }
+
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
+  for (let x=0;x<=YARD_W;x+=10) { ctx.beginPath();ctx.moveTo(x*scale,0);ctx.lineTo(x*scale,CH);ctx.stroke(); }
+  for (let y=0;y<=YARD_H;y+=10) { ctx.beginPath();ctx.moveTo(0,y*scale);ctx.lineTo(CW,y*scale);ctx.stroke(); }
+
+  // axis labels
+  ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font=`${Math.max(8,scale*1.2)}px monospace`;
+  ctx.fillText('0,0',2,CH-2); ctx.fillText('53ft',CW-30,CH-2); ctx.fillText('82ft',2,10);
+
+  // SVG overlay
+  const svg = document.getElementById('overlay-svg');
+  svg.setAttribute('width', CW); svg.setAttribute('height', CH);
+  drawSketch(svg, scale);
+
+  updDots(); updSpr(); updTable();
+}
+
+function updDots() {
+  const wrap = document.getElementById('yard-wrap');
+  sensorData.forEach(s => {
+    let el = document.getElementById('d-'+s.label);
+    if (!el) {
+      el = document.createElement('div');
+      el.className='sdot'; el.id='d-'+s.label;
+      wrap.appendChild(el);
+    }
+    const [r,g,b]=mCol(s.moisture);
+    el.style.left=s.x*scale+'px'; el.style.top=cY(s.y)+'px';
+    el.style.background=`rgb(${r},${g},${b})`;
+    el.innerHTML=`<div style="font-size:7px">${s.label}</div><div>${Math.round(s.moisture)}%</div>`;
+  });
+}
+
+function updSpr() {
+  const ring=document.getElementById('spring'), dot=document.getElementById('sprdot');
+  const cx=SPRINKLER.x*scale, cy=cY(SPRINKLER.y), rv=SPRINKLER.radius*(cv.height/YARD_H);
+  ring.style.left=cx+'px'; ring.style.top=cy+'px';
+  ring.style.width=rv*2+'px'; ring.style.height=rv*2+'px';
+  ring.style.display=showCov?'block':'none';
+  dot.style.left=cx+'px'; dot.style.top=cy+'px';
+}
+
+function updTable() {
+  const g=document.getElementById('tg'); g.innerHTML='';
+  sensorData.forEach(s => {
+    const [r,gg,b]=mCol(s.moisture);
+    const d=document.createElement('div'); d.className='tc';
+    d.innerHTML=`<div class="tn">${s.label}</div>
+      <div class="tv" style="color:rgb(${r},${gg},${b})">${Math.round(s.moisture)}%</div>
+      <div class="tp">${s.x}ft, ${s.y}ft</div>`;
+    g.appendChild(d);
+  });
+}
+
+function toggleCov() {
+  showCov=!showCov;
+  document.getElementById('btn-cov').className=showCov?'active':'';
+  updSpr();
+}
+
+function toggleSketch() {
+  showSketch=!showSketch;
+  document.getElementById('btn-sketch').className=showSketch?'active':'';
+  draw();
+}
+
+function init() {
+  const wrap=document.getElementById('yard-wrap');
+  const maxW=wrap.offsetWidth||400;
+  const canvasW=Math.min(maxW, Math.floor((window.innerHeight*0.75)*(YARD_W/YARD_H)));
+  scale=canvasW/YARD_W;
+  const cv=document.getElementById('cv');
+  cv.width=canvasW; cv.height=Math.round(YARD_H*scale);
+  draw();
+  fetchData();
+  setInterval(fetchData, 60000);
+}
+
+window.addEventListener('resize', () => {
+  const wrap=document.getElementById('yard-wrap');
+  const maxW=wrap.offsetWidth||400;
+  const canvasW=Math.min(maxW,Math.floor((window.innerHeight*0.75)*(YARD_W/YARD_H)));
+  scale=canvasW/YARD_W;
+  const cv=document.getElementById('cv');
+  cv.width=canvasW; cv.height=Math.round(YARD_H*scale);
+  draw();
+});
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

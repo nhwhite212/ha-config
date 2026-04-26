@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yard Moisture Map</title>
+<style>
+  /* ── Replace YOUR_HA_TOKEN below before copying to /config/www/ ── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    padding: 12px;
+    min-height: 100vh;
+  }
+  h2 { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #f0f0f0; }
+  p.sub { font-size: 11px; color: #888; margin-top: 2px; }
+  #header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  #controls { display: flex; gap: 8px; align-items: center; }
+  button {
+    font-size: 11px; padding: 4px 10px;
+    border: 1px solid #444; border-radius: 4px;
+    background: transparent; color: #aaa; cursor: pointer;
+  }
+  button.active { background: #1e3a5f; color: #60a5fa; border-color: #3b82f6; }
+  #status { font-size: 10px; color: #666; margin-bottom: 6px; }
+  #status.ok { color: #4ade80; }
+  #status.err { color: #f87171; }
+  #yard-wrap { position: relative; }
+  canvas { display: block; border-radius: 4px; border: 1px solid #333; width: 100%; }
+  .sdot {
+    position: absolute; width: 32px; height: 32px; border-radius: 50%;
+    transform: translate(-50%,-50%); cursor: default;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    font-size: 8px; font-weight: 700; color: #111; line-height: 1.3;
+    border: 2px solid rgba(255,255,255,0.8);
+    pointer-events: none;
+  }
+  #spring {
+    position: absolute; border-radius: 50%;
+    border: 1.5px dashed rgba(96,165,250,0.5);
+    pointer-events: none; transform: translate(-50%,-50%);
+  }
+  #sprdot {
+    position: absolute; width: 22px; height: 22px; border-radius: 50%;
+    background: #3b82f6; border: 2px solid white;
+    transform: translate(-50%,-50%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+  #legend { display: flex; align-items: center; gap: 8px; margin: 10px 0 8px; }
+  #legend span { font-size: 10px; color: #666; }
+  #legbar { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(to right, rgb(220,50,20), rgb(235,200,50), rgb(0,200,50), rgb(0,140,255)); }
+  #tbl h3 { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 6px; }
+  .tgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+  .tc { padding: 6px 8px; border-radius: 4px; border: 1px solid #2a2a2a; background: #222; }
+  .tc .tn { font-size: 10px; font-weight: 700; color: #e0e0e0; }
+  .tc .tv { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .tc .tp { font-size: 9px; color: #666; }
+  #refresh { font-size: 10px; color: #555; margin-top: 8px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h2>Yard Moisture Map</h2>
+    <p class="sub">96 × 64 ft · updates every 60 seconds</p>
+  </div>
+  <div id="controls">
+    <button id="btn-cov" class="active" onclick="toggleCov()">Coverage</button>
+    <button onclick="fetchData()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="status">Connecting to Home Assistant...</div>
+
+<div id="yard-wrap">
+  <canvas id="cv"></canvas>
+  <div id="spring"></div>
+  <div id="sprdot">💧</div>
+</div>
+
+<div id="legend"><span>Dry</span><div id="legbar"></div><span>Wet</span></div>
+
+<div id="tbl">
+  <h3>Live sensor readings</h3>
+  <div class="tgrid" id="tg"></div>
+</div>
+
+<div id="refresh">Last updated: —</div>
+
+<script>
+// ── CONFIGURATION ─────────────────────────────────────────────────────────────
+const HA_URL   = 'http://100.68.69.68:8123';       // Your HA URL
+const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlNDY0MGZmNDJmNmU0ZWM3ODMyMDE3ZjlhZTA0NTA1MiIsImlhdCI6MTc3Njk2NzU3NywiZXhwIjoyMDkyMzI3NTc3fQ.2iocn1wnEslUZVYeBGrQ67kbzmjVAY_pfXDhCEqfep0';              // Paste your Long-Lived Access Token here
+
+// Sensor entity IDs and yard positions (x, y in feet from bottom-left)
+const SENSORS = [
+  { id: 'sensor.soil_moisture_nj_9_f7', label: 'f7', x: 30, y: 20 },
+  { id: 'sensor.soil_moisture_nj_5_2f', label: '2f', x: 4,  y: 25 },
+  { id: 'sensor.soil_moisture_nj_8_00', label: '00', x: 30, y: 50 },
+  { id: 'sensor.soil_moisture_nj_7_46', label: '46', x: 45, y: 40 },
+  { id: 'sensor.soil_moisture_nj_6_f2', label: 'f2', x: 68, y: 30 },
+];
+
+const SPRINKLER = { x: 10, y: 40, radius: 40 };
+const YARD_W = 96, YARD_H = 64;
+// ─────────────────────────────────────────────────────────────────────────────
+
+let showCov = true;
+let scale = 1;
+let sensorData = SENSORS.map(s => ({ ...s, moisture: 50 }));
+
+async function fetchData() {
+  const status = document.getElementById('status');
+  try {
+    const results = await Promise.all(
+      SENSORS.map(s =>
+        fetch(`${HA_URL}/api/states/${s.id}`, {
+          headers: { Authorization: `Bearer ${HA_TOKEN}`, 'Content-Type': 'application/json' }
+        }).then(r => r.json())
+      )
+    );
+    sensorData = SENSORS.map((s, i) => ({
+      ...s,
+      moisture: parseFloat(results[i].state) || 0
+    }));
+    status.textContent = 'Connected ✓';
+    status.className = 'ok';
+    document.getElementById('refresh').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString();
+    draw();
+  } catch(e) {
+    status.textContent = 'Error connecting to HA — check token and URL';
+    status.className = 'err';
+  }
+}
+
+function cY(yFt) { return (YARD_H - yFt) * scale; }
+
+function idw(px, py, power=2) {
+  let num=0, den=0;
+  for (const s of sensorData) {
+    const sy = YARD_H - s.y;
+    const d = Math.sqrt((s.x-px)**2 + (sy-py)**2);
+    if (d < 0.001) return s.moisture;
+    const w = 1/d**power;
+    num += w*s.moisture; den += w;
+  }
+  return den===0 ? 50 : num/den;
+}
+
+function mCol(v) {
+  const t = Math.max(0, Math.min(1, v/100));
+  if (t<0.25) { const u=t/0.25; return [220+u*15,50+u*150,20+u*30]; }
+  if (t<0.5)  { const u=(t-0.25)/0.25; return [235-u*235,200-u*60,50+u*50]; }
+  if (t<0.75) { const u=(t-0.5)/0.25; return [0,140+u*60,100+u*100]; }
+  const u=(t-0.75)/0.25; return [0,200-u*60,200+u*55];
+}
+
+function draw() {
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const CW=cv.width, CH=cv.height;
+  const res=3, cols=Math.ceil(CW/res), rows=Math.ceil(CH/res);
+  const img = ctx.createImageData(cols*res, rows*res);
+
+  for (let r=0; r<rows; r++) for (let c=0; c<cols; c++) {
+    const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+    const v=idw(px,py);
+    const [r2,g,b]=mCol(v);
+    for (let dy=0;dy<res;dy++) for (let dx=0;dx<res;dx++) {
+      const i=((r*res+dy)*cols*res+(c*res+dx))*4;
+      img.data[i]=r2; img.data[i+1]=g; img.data[i+2]=b; img.data[i+3]=210;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // contour lines
+  ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=0.5;
+  for (let lv=20; lv<=80; lv+=20) {
+    ctx.beginPath();
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const px=(c/cols)*YARD_W, py=(r/rows)*YARD_H;
+      const v=idw(px,py), vr=idw(((c+1)/cols)*YARD_W,py), vd=idw(px,((r+1)/rows)*YARD_H);
+      if ((v-lv)*(vr-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo((c+1)*res,r*res); }
+      if ((v-lv)*(vd-lv)<0) { ctx.moveTo(c*res,r*res); ctx.lineTo(c*res,(r+1)*res); }
+    }
+    ctx.stroke();
+  }
+
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
+  for (let x=0;x<=YARD_W;x+=16) { ctx.beginPath();ctx.moveTo(x*scale,0);ctx.lineTo(x*scale,CH);ctx.stroke(); }
+  for (let y=0;y<=YARD_H;y+=16) { ctx.beginPath();ctx.moveTo(0,y*scale);ctx.lineTo(CW,y*scale);ctx.stroke(); }
+
+  // axis labels
+  ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font=`${Math.max(8,scale*1.2)}px monospace`;
+  ctx.fillText('0,0',2,CH-2); ctx.fillText('96ft',CW-30,CH-2); ctx.fillText('64ft',2,10);
+
+  updDots(); updSpr(); updTable();
+}
+
+function updDots() {
+  const wrap = document.getElementById('yard-wrap');
+  sensorData.forEach(s => {
+    let el = document.getElementById('d-'+s.label);
+    if (!el) {
+      el = document.createElement('div');
+      el.className='sdot'; el.id='d-'+s.label;
+      wrap.appendChild(el);
+    }
+    const [r,g,b]=mCol(s.moisture);
+    el.style.left=s.x*scale+'px'; el.style.top=cY(s.y)+'px';
+    el.style.background=`rgb(${r},${g},${b})`;
+    el.innerHTML=`<div style="font-size:7px">${s.label}</div><div>${Math.round(s.moisture)}%</div>`;
+  });
+}
+
+function updSpr() {
+  const ring=document.getElementById('spring'), dot=document.getElementById('sprdot');
+  const cx=SPRINKLER.x*scale, cy=cY(SPRINKLER.y), rv=SPRINKLER.radius*scale;
+  ring.style.left=cx+'px'; ring.style.top=cy+'px';
+  ring.style.width=rv*2+'px'; ring.style.height=rv*2+'px';
+  ring.style.display=showCov?'block':'none';
+  dot.style.left=cx+'px'; dot.style.top=cy+'px';
+}
+
+function updTable() {
+  const g=document.getElementById('tg'); g.innerHTML='';
+  sensorData.forEach(s => {
+    const [r,gg,b]=mCol(s.moisture);
+    const d=document.createElement('div'); d.className='tc';
+    d.innerHTML=`<div class="tn">${s.label}</div>
+      <div class="tv" style="color:rgb(${r},${gg},${b})">${Math.round(s.moisture)}%</div>
+      <div class="tp">${s.x}ft, ${s.y}ft</div>`;
+    g.appendChild(d);
+  });
+}
+
+function toggleCov() {
+  showCov=!showCov;
+  document.getElementById('btn-cov').className=showCov?'active':'';
+  updSpr();
+}
+
+function init() {
+  const wrap=document.getElementById('yard-wrap');
+  scale=(wrap.offsetWidth||600)/YARD_W;
+  const cv=document.getElementById('cv');
+  cv.width=YARD_W*scale; cv.height=YARD_H*scale;
+  draw();
+  fetchData();
+  setInterval(fetchData, 60000);
+}
+
+window.addEventListener('resize', () => {
+  const wrap=document.getElementById('yard-wrap');
+  scale=wrap.offsetWidth/YARD_W;
+  const cv=document.getElementById('cv');
+  cv.width=YARD_W*scale; cv.height=YARD_H*scale;
+  draw();
+});
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

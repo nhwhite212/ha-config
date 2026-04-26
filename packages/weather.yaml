@@ -63,6 +63,9 @@ mqtt:
       json_attributes_topic: ha/prior_ten_rain
 
     # Soil moisture sensors
+    # Backyard sensors: c2 (location unknown), 2f, f2, 46, 00, f7
+    # Not in backyard: a7, a3
+    # Not working: 89
     - name: Soil_Moisture_NJ_a7
       unique_id: "SoilMoistureNJa7"
       value_template: "{{ value_json.moisture }}"
@@ -96,38 +99,26 @@ mqtt:
     - name: Soil Moisture NJ 6 f2
       unique_id: "SoilMoistureNJ6f2"
       value_template: "{{ value_json.moisture }}"
-      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
       state_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0ee0f2/nomsg
-
 
     - name: Soil Moisture NJ 7 46
       unique_id: "SoilMoistureNJ746"
       value_template: "{{ value_json.moisture }}"
-      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
       state_topic: rtl_433/Fineoffset-WH51/0f5146/nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0f5146/nomsg
-
-
 
     - name: Soil Moisture NJ 8 00
       unique_id: "SoilMoistureNJ800"
       value_template: "{{ value_json.moisture }}"
-      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
       state_topic: rtl_433/Fineoffset-WH51/0f4e00/nomsg
       json_attributes_topic: rtl_433/Fineoffset-WH51/0f4e00/nomsg
-
-
 
     - name: Soil Moisture NJ 9 f7
       unique_id: "SoilMoistureNJ9f7"
       value_template: "{{ value_json.moisture }}"
-      # Fixed: was 0ee02f2nomsg (typo) - corrected to match json_attributes_topic
       state_topic: rtl_433/Fineoffset-WH51/0f4cf7/nomsg
-      json_attributes_topic: rtl_433/Fineoffset-WH51/0f4cf7nomsg
-
-
-
+      json_attributes_topic: rtl_433/Fineoffset-WH51/0f4cf7/nomsg
 
 sensor:
   - platform: noaa_tides
@@ -248,12 +239,12 @@ template:
         unit_of_measurement: "%"
         state: >
           {% set readings = [
-            states('sensor.soil_moisture_nj_a7') | float(0),
             states('sensor.soil_moisture_nj_2_c2') | float(0),
-            states('sensor.soil_moisture_nj_3_89') | float(0),
-            states('sensor.soil_moisture_nj_4_a3') | float(0),
             states('sensor.soil_moisture_nj_5_2f') | float(0),
-            states('sensor.soil_moisture_nj_6_f2') | float(0)
+            states('sensor.soil_moisture_nj_6_f2') | float(0),
+            states('sensor.soil_moisture_nj_7_46') | float(0),
+            states('sensor.soil_moisture_nj_8_00') | float(0),
+            states('sensor.soil_moisture_nj_9_f7') | float(0)
           ] | select('>', 0) | list | sort %}
           {% if readings | count > 0 %}
             {{ ((readings[((readings|count) // 2) - 1] + readings[(readings|count) // 2]) / 2) | round(1) }}
