@@ -90,21 +90,7 @@ script:
           title: Sprinkler NJ
           message: "Emergency stop triggered - sprinkler off"
 
-automation:
-  - id: sprinkler_reset_on_start
-    alias: Sprinkler - Reset on HA startup
-    description: Ensures valve and running flag are always off after a reboot
-    trigger:
-      - platform: homeassistant
-        event: start
-    action:
-      - service: switch.turn_off
-        target:
-          entity_id: switch.backyard_sprinkler
-      - service: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.sprinkler_running
-
+automation: 
   - id: sprinkler_check_and_run
     alias: Sprinkler - Check conditions and run
     description: >
@@ -298,3 +284,15 @@ automation:
           title: Soil Sensor Offline
           message: "{{ trigger.to_state.name }} has been unavailable for 1 hour"
     mode: parallel
+
+  - id: turn off sprinkler on ha startup
+    alias: force sprinkler plug off on startup
+    description: make sure sprinkler is turned of on HA startup
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - delay: "00:00:30"
+      - service: switch.turn_off
+        target:
+          entity_id: switch.backyard_sprinkler
