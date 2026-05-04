@@ -34,7 +34,7 @@ action:
             data:
               title: "💨 Sprinkler skipped"
               message: >
-                Too windy to water ({{ states('sensor.Wind__Speed_Max_10min') | round(1) }} mph — limit is 3
+                Too windy to water ({{ states('sensor.Wind_Speed_Max_10min') | round(1) }} mph — limit is 3
                 
 
     default:

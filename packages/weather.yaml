@@ -152,14 +152,15 @@ sensor:
   - platform: statistics
     unique_id: max_wind_speed_last_24_hours
     name: "Max wind speed in last 24 hours"
-    entity_id: sensor.wind_speed_mph_2
+    entity_id: sensor.wind_speed_mph
     state_characteristic: value_max
     max_age:
       hours: 24
 
   - platform: statistics
     name: "Wind Speed Max 10min"
-    entity_id: sensor.wind_speed_mph_2
+    unique_id: "max_wind_speed_in_last_10mins"
+    entity_id: sensor.wind_speed_mph
     state_characteristic: value_max
     max_age:
       minutes: 10
@@ -194,11 +195,11 @@ template:
       - name: wind speed mph
         unique_id: "windspeednjmph"
         state: >
-          {% set wind_kmh = states('sensor.wind_speed_kmh') %}
-          {% if wind_kmh in ['unknown', 'unavailable'] %}
+          {% set wind_kph = states('sensor.wind_speed_kph') %}
+          {% if wind_kph in ['unknown', 'unavailable'] %}
             0.0
           {% else %}
-            {{ (wind_kmh | float / 1.609) | round(2) }}
+            {{ (wind_kph | float / 1.609) | round(2) }}
           {% endif %}
 
       - name: totalrainin

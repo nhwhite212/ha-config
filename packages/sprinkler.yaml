@@ -117,7 +117,7 @@ automation:
              and now().hour < states('input_number.sprinkler_end_hour') | int }}
       - condition: template
         value_template: >
-          {{ states('sensor.wind_speed_mph_2') | float(99)
+          {{ states('sensor.wind_speed_mph') | float(99)
              < states('input_number.sprinkler_wind_threshold') | float }}
       - condition: template
         value_template: >
@@ -139,7 +139,7 @@ automation:
           title: Sprinkler NJ
           message: >
             Sprinkler started. Soil: {{ states('sensor.soil_moisture_median') }}%,
-            Wind: {{ states('sensor.wind_speed_mph_2') }} mph,
+            Wind: {{ states('sensor.wind_speed_mph') }} mph,
             Rain 24hr: {{ states('sensor.rain_in_last_24_hours') }} in,
             Run time: {{ states('input_number.sprinkler_run_duration') | int }} min
       - delay:
@@ -174,7 +174,7 @@ automation:
         state: "off"
       - condition: template
         value_template: >
-          {{ states('sensor.wind_speed_mph_2') | float(99)
+          {{ states('sensor.wind_speed_mph') | float(99)
              < states('input_number.sprinkler_wind_threshold') | float }}
       - condition: template
         value_template: >
@@ -196,7 +196,7 @@ automation:
           title: Sprinkler TEST
           message: >
             Test cycle started. Soil: {{ states('sensor.soil_moisture_median') }}%,
-            Wind: {{ states('sensor.wind_speed_mph_2') }} mph,
+            Wind: {{ states('sensor.wind_speed_mph') }} mph,
             Rain 24hr: {{ states('sensor.rain_in_last_24_hours') }} in
       - delay:
           minutes: 1
@@ -239,7 +239,7 @@ automation:
     description: Turn off sprinkler if wind exceeds threshold while running
     trigger:
       - platform: numeric_state
-        entity_id: sensor.wind_speed_mph_2
+        entity_id: sensor.wind_speed_mph
         above: input_number.sprinkler_wind_threshold
     condition:
       - condition: state
@@ -256,7 +256,7 @@ automation:
         data:
           title: Sprinkler NJ - WARNING
           message: >
-            Sprinkler stopped - wind speed {{ states('sensor.wind_speed_mph_2') }} mph
+            Sprinkler stopped - wind speed {{ states('sensor.wind_speed_mph') }} mph
             exceeded threshold of {{ states('input_number.sprinkler_wind_threshold') }} mph
     mode: single
 
