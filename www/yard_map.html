@@ -15,8 +15,10 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // Home Assistant connection
-const HA_URL   = 'http://100.68.69.68:8123';
-const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhYTMxODc1NjFlNTQ0ZTMyYWUwOTgyYzc2MzUxMDZkZCIsImlhdCI6MTc3Njk4MTE3OCwiZXhwIjoyMDkyMzQxMTc4fQ.UoqIQ5d164_8nuJ4NsO_Or_iTBR0DsOhr2VROrxAbEY';            // Paste your Long-Lived Access Token here;
+const HA_URL   = 'http://192.168.4.78:8123';
+const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiNjIxMmI2ZmU4ZjU0ODU5YWMyMWEzZjdjZDJjZWIxYiIsImlhdCI6MTc3NzY2NTc5OSwiZXhwIjoyMDkzMDI1Nzk5fQ.oKhylg-jpPBO_dSTeoaVxOR7CDe6dcFqdV8RUHuS1mo'
+// const HA_TOKEN = 'zUxMDZkZC.IsImlhdCI6MTc3Njk4MTE3OCwiZXhwIjoyMDkyMzQxMTc4fQ.UoqIQ5d164_8nuJ4NsO_Or_iTBR0DsOhr2VROrxAbEY';            // Paste your Long-Lived Access Token here;
+// const HA_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiNjIxMmI2ZmU4ZjU0ODU5YWMyMWEzZjdjZDJjZWIxYiIsImlhdCI6MTc3NzY2NTc5OSwiZXhwIjoyMDkzMDI1Nzk5fQ.oKhylg-jpPBO_dSTeoaVxOR7CDe6';            // Paste your Long-Lived Access Token here;
 
 // Yard dimensions in feet
 const YARD_W = 60;   // width (left to right)
@@ -30,12 +32,12 @@ const CANVAS_H = 550;   // try 400, 550, 700
 const FONT_SIZE = 14;   // try 10, 12, 14, 16
 
 // Sensor dot size in pixels
-const DOT_SIZE = 36;    // try 28, 36, 44
+const DOT_SIZE = 44;    // try 28, 36, 44
 
 // Sprinkler position (feet from bottom-left) and spray radius (feet)
-const SPR_X = 12;
-const SPR_Y = 40;
-const SPR_R = 40;       // spray radius in feet — update after measuring
+const SPR_X = 25;
+const SPR_Y = 30;
+const SPR_R = 35;       // spray radius in feet — update after measuring
 
 // Soil sensors — entity ID, label, position in feet from bottom-left
 const SENSOR_DEFS = [
