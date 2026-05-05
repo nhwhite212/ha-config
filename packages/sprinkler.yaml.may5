@@ -1,5 +1,5 @@
 # Sprinkler Package
-# Schedule: configurable days, configurable start/end hour
+# Schedule: Mon/Wed/Fri, configurable start/end hour
 # All thresholds configurable via input_number helpers on the dashboard
 # No forecast condition - uses local sensors only
 
@@ -7,30 +7,10 @@ input_boolean:
   sprinkler_running:
     name: Sprinkler Running
     icon: mdi:sprinkler
+
   sprinkler_enabled:
     name: Sprinkler System Enabled
     icon: mdi:sprinkler-variant
-  sprinkler_monday:
-    name: Sprinkler Monday
-    icon: mdi:calendar
-  sprinkler_tuesday:
-    name: Sprinkler Tuesday
-    icon: mdi:calendar
-  sprinkler_wednesday:
-    name: Sprinkler Wednesday
-    icon: mdi:calendar
-  sprinkler_thursday:
-    name: Sprinkler Thursday
-    icon: mdi:calendar
-  sprinkler_friday:
-    name: Sprinkler Friday
-    icon: mdi:calendar
-  sprinkler_saturday:
-    name: Sprinkler Saturday
-    icon: mdi:calendar
-  sprinkler_sunday:
-    name: Sprinkler Sunday
-    icon: mdi:calendar
 
 input_number:
   sprinkler_moisture_threshold:
@@ -41,6 +21,7 @@ input_number:
     unit_of_measurement: "%"
     icon: mdi:water-percent
     initial: 40
+
   sprinkler_wind_threshold:
     name: Sprinkler max wind speed
     min: 0
@@ -49,6 +30,7 @@ input_number:
     unit_of_measurement: "mph"
     icon: mdi:weather-windy
     initial: 3
+
   sprinkler_rain_24h_threshold:
     name: Sprinkler max rain last 24h
     min: 0
@@ -57,6 +39,7 @@ input_number:
     unit_of_measurement: "in"
     icon: mdi:weather-rainy
     initial: 0.25
+
   sprinkler_run_duration:
     name: Sprinkler run duration
     min: 1
@@ -65,6 +48,7 @@ input_number:
     unit_of_measurement: "min"
     icon: mdi:timer
     initial: 30
+
   sprinkler_start_hour:
     name: Sprinkler start hour
     min: 0
@@ -73,6 +57,7 @@ input_number:
     unit_of_measurement: "h"
     icon: mdi:clock-start
     initial: 5
+
   sprinkler_end_hour:
     name: Sprinkler end hour
     min: 0
@@ -81,6 +66,7 @@ input_number:
     unit_of_measurement: "h"
     icon: mdi:clock-end
     initial: 8
+
   sprinkler_run_count:
     name: Sprinkler Run Count Today
     min: 0
@@ -104,11 +90,11 @@ script:
           title: Sprinkler NJ
           message: "Emergency stop triggered - sprinkler off"
 
-automation:
+automation: 
   - id: sprinkler_check_and_run
     alias: Sprinkler - Check conditions and run
     description: >
-      Checks conditions on configured days within configured hours and runs
+      Checks conditions Mon/Wed/Fri within configured hours and runs
       sprinkler for configured duration if needed, then rechecks.
     trigger:
       - platform: time_pattern
@@ -120,10 +106,11 @@ automation:
       - condition: state
         entity_id: input_boolean.sprinkler_running
         state: "off"
-      - condition: template
-        value_template: >
-          {% set day = now().strftime('%A').lower() %}
-          {{ states('input_boolean.sprinkler_' + day) == 'on' }}
+      - condition: time
+        weekday:
+          - mon
+          - wed
+          - fri
       - condition: template
         value_template: >
           {{ now().hour >= states('input_number.sprinkler_start_hour') | int
@@ -300,7 +287,7 @@ automation:
 
   - id: turn off sprinkler on ha startup
     alias: force sprinkler plug off on startup
-    description: make sure sprinkler is turned off on HA startup
+    description: make sure sprinkler is turned of on HA startup
     trigger:
       - platform: homeassistant
         event: start
