@@ -23,14 +23,16 @@ scene: !include scenes.yaml
 homeassistant:
   packages: !include_dir_named packages
 
+logger:
+  default: warning
+  logs:
+    pykumo: debug
 
-
- 
+shell_command:
+  #test_kumo: "python3 /config/test_kumo.py > /config/test_kumo_output.txt 2>&1"
+#
+  test_kumo: "find / -name 'python*' -type f 2>/dev/null > /config/test_kumo_output.txt"
 recorder:
    purge_keep_days: 5
    commit_interval: 60
 
-logger:
-   default: warning
-
- 
