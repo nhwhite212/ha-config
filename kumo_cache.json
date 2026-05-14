@@ -1,0 +1,57 @@
+[
+  {},
+  {},
+  {
+    "children": [
+      {
+        "zoneTable": {
+          "5734P0093100941F": {
+            "serial": "5734P0093100941F",
+            "label": "Bedroom",
+            "password": "dlCsMggS32Debx4nYnIrhkRf/L0F4MnecT3xGY/U",
+            "cryptoSerial": "012309491d911b47ee",
+            "mac": "38:8d:3d:e6:c1:19",
+            "unitType": "ductless",
+            "address": "192.168.4.83"
+          },
+          "5434P009E100924F": {
+            "serial": "5434P009E100924F",
+            "label": "Dining Room",
+            "password": "j350XT6wEDROhtbztMGLTkhzU1lxm/DRbxi+wS0w",
+            "cryptoSerial": "0123cdd1c123fc51ee",
+            "mac": "28:2e:89:8b:10:8a",
+            "unitType": "ductless",
+            "address": "192.168.4.79"
+          },
+          "5734P0093100983F": {
+            "serial": "5734P0093100983F",
+            "label": "Home Office",
+            "password": "bml4LsD+vM5Qr0a01Qe8hYh3uKmz1kM3br3JRvTs",
+            "cryptoSerial": "0123bc6670b3dfa3ee",
+            "mac": "38:8d:3d:e6:c3:41",
+            "unitType": "ductless",
+            "address": "192.168.4.85"
+          },
+          "5X34P0099100032F": {
+            "serial": "5X34P0099100032F",
+            "label": "Living Room",
+            "password": "Cb+OU0wdRsnytqCJOYFEXV+MdRLWISz8BFNqPoq1",
+            "cryptoSerial": "0123f4b4eca71287ee",
+            "mac": "b8:82:f2:c8:d9:b1",
+            "unitType": "ductless",
+            "address": "192.168.4.80"
+          },
+          "5X34P0098101534F": {
+            "serial": "5X34P0098101534F",
+            "label": "Master Bedroom",
+            "password": "1IBtIPS17QR+kOgkUveGHFiNpQ1ArwOPbjntRtL9",
+            "cryptoSerial": "01232a0da1755d89ee",
+            "mac": "b8:82:f2:c8:dd:23",
+            "unitType": "ductless",
+            "address": "192.168.4.82"
+          }
+        }
+      }
+    ]
+  }
+]
