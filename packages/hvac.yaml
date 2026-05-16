@@ -1,0 +1,665 @@
+# HVAC Package - All Mitsubishi Kumo climate control configuration
+
+input_boolean:
+  someone_home:
+    name: Someone Home
+    icon: mdi:home-account
+
+input_datetime:
+  hvac_schedule_start:
+    name: HVAC Schedule Start
+    has_date: false
+    has_time: true
+    icon: mdi:clock-outline
+  hvac_schedule_end:
+    name: HVAC Schedule End
+    has_date: false
+    has_time: true
+    icon: mdi:clock-outline
+
+input_number:
+  hvac_cool_threshold:
+    name: Cool Threshold
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer-chevron-up
+  hvac_heat_threshold:
+    name: Heat Threshold
+    min: 30
+    max: 70
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer-chevron-down
+  hvac_away_heat_threshold:
+    name: Away Heat Threshold
+    min: 30
+    max: 70
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer-chevron-down
+  hvac_away_cool_threshold:
+    name: Away Cool Threshold
+    min: 60
+    max: 95
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer-chevron-up
+  hvac_away_heat_setpoint:
+    name: Away Heat Setpoint
+    min: 30
+    max: 70
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_away_cool_setpoint:
+    name: Away Cool Setpoint
+    min: 60
+    max: 95
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_heat_living_room:
+    name: Day Heat Living Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_heat_dining_room:
+    name: Day Heat Dining Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_heat_home_office:
+    name: Day Heat Home Office
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_heat_bedroom:
+    name: Day Heat Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_heat_master_bedroom:
+    name: Day Heat Master Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_heat_living_room:
+    name: Night Heat Living Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_heat_dining_room:
+    name: Night Heat Dining Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_heat_home_office:
+    name: Night Heat Home Office
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_heat_bedroom:
+    name: Night Heat Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_heat_master_bedroom:
+    name: Night Heat Master Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_cool_living_room:
+    name: Day Cool Living Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_cool_dining_room:
+    name: Day Cool Dining Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_cool_home_office:
+    name: Day Cool Home Office
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_cool_bedroom:
+    name: Day Cool Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_day_cool_master_bedroom:
+    name: Day Cool Master Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_cool_living_room:
+    name: Night Cool Living Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_cool_dining_room:
+    name: Night Cool Dining Room
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_cool_home_office:
+    name: Night Cool Home Office
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_cool_bedroom:
+    name: Night Cool Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+  hvac_night_cool_master_bedroom:
+    name: Night Cool Master Bedroom
+    min: 60
+    max: 90
+    step: 1
+    unit_of_measurement: °F
+    mode: slider
+    icon: mdi:thermometer
+
+script:
+  determine_presence:
+    alias: Determine Presence
+    sequence:
+      - variables:
+          phones_home: >
+            {{ is_state('device_tracker.baysidea', 'home') or
+               is_state('device_tracker.baysideb', 'home') }}
+      - if:
+          - condition: template
+            value_template: "{{ phones_home }}"
+        then:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.someone_home
+        else:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.someone_home
+    mode: single
+
+  hvac_set_defaults:
+    alias: HVAC Set Default Values
+    sequence:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_heat_threshold
+        data:
+          value: 55
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_cool_threshold
+        data:
+          value: 75
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_away_heat_threshold
+        data:
+          value: 45
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_away_cool_threshold
+        data:
+          value: 85
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_away_heat_setpoint
+        data:
+          value: 62
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_away_cool_setpoint
+        data:
+          value: 85
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_heat_living_room
+        data:
+          value: 72
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_heat_dining_room
+        data:
+          value: 72
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_heat_home_office
+        data:
+          value: 72
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_heat_bedroom
+        data:
+          value: 66
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_heat_master_bedroom
+        data:
+          value: 66
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_heat_living_room
+        data:
+          value: 68
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_heat_dining_room
+        data:
+          value: 68
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_heat_home_office
+        data:
+          value: 68
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_heat_bedroom
+        data:
+          value: 68
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_heat_master_bedroom
+        data:
+          value: 68
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_cool_living_room
+        data:
+          value: 78
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_cool_dining_room
+        data:
+          value: 78
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_cool_home_office
+        data:
+          value: 78
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_cool_bedroom
+        data:
+          value: 80
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_day_cool_master_bedroom
+        data:
+          value: 80
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_cool_living_room
+        data:
+          value: 76
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_cool_dining_room
+        data:
+          value: 76
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_cool_home_office
+        data:
+          value: 76
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_cool_bedroom
+        data:
+          value: 76
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.hvac_night_cool_master_bedroom
+        data:
+          value: 76
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.hvac_schedule_start
+        data:
+          time: "07:30:00"
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.hvac_schedule_end
+        data:
+          time: "23:00:00"
+    mode: single
+    
+  kumo_all_units_off:
+    alias: Kumo All Units Off
+    sequence:
+      - action: climate.turn_off
+        target:
+          entity_id:
+            - climate.living_room
+            - climate.dining_room
+            - climate.bedroom
+            - climate.master_bedroom
+            - climate.home_office
+    mode: single
+
+automation:
+  - alias: HVAC Season Control
+    description: Sets HVAC mode and temperatures based on outside temperature, presence and time
+    triggers:
+      - entity_id:
+          - device_tracker.baysidea
+          - device_tracker.baysideb
+        trigger: state
+      - entity_id: sensor.outside_temperature_deck
+        above: 0
+        trigger: numeric_state
+      - trigger: time
+        at: input_datetime.hvac_schedule_start
+      - trigger: time
+        at: input_datetime.hvac_schedule_end
+      - minutes: /30
+        trigger: time_pattern
+    conditions: []
+    actions:
+      - action: script.turn_on
+        target:
+          entity_id: script.determine_presence
+      - delay:
+          seconds: 5
+      - variables:
+          outside_temp: "{{ states('sensor.outside_temperature_deck') | float }}"
+          cool_threshold: "{{ states('input_number.hvac_cool_threshold') | float }}"
+          heat_threshold: "{{ states('input_number.hvac_heat_threshold') | float }}"
+          away_cool_threshold: "{{ states('input_number.hvac_away_cool_threshold') | float }}"
+          away_heat_threshold: "{{ states('input_number.hvac_away_heat_threshold') | float }}"
+          away_cool_setpoint: "{{ states('input_number.hvac_away_cool_setpoint') | float }}"
+          away_heat_setpoint: "{{ states('input_number.hvac_away_heat_setpoint') | float }}"
+          is_day: >
+            {% set start = states('input_datetime.hvac_schedule_start') %}
+            {% set end = states('input_datetime.hvac_schedule_end') %}
+            {% set now_time = now().strftime('%H:%M:%S') %}
+            {{ start <= now_time <= end }}
+          someone_home: "{{ is_state('input_boolean.someone_home', 'on') }}"
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ not someone_home and outside_temp < away_heat_threshold }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: heat
+              - action: climate.set_temperature
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  temperature: "{{ away_heat_setpoint }}"
+          - conditions:
+              - condition: template
+                value_template: "{{ not someone_home and outside_temp > away_cool_threshold }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: cool
+              - action: climate.set_temperature
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  temperature: "{{ away_cool_setpoint }}"
+          - conditions:
+              - condition: template
+                value_template: "{{ not someone_home }}"
+            sequence:
+              - action: climate.turn_off
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+          - conditions:
+              - condition: template
+                value_template: "{{ someone_home and outside_temp < heat_threshold and is_day }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: heat
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.living_room
+                data:
+                  temperature: "{{ states('input_number.hvac_day_heat_living_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.dining_room
+                data:
+                  temperature: "{{ states('input_number.hvac_day_heat_dining_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.home_office
+                data:
+                  temperature: "{{ states('input_number.hvac_day_heat_home_office') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_day_heat_bedroom') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.master_bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_day_heat_master_bedroom') | float }}"
+          - conditions:
+              - condition: template
+                value_template: "{{ someone_home and outside_temp < heat_threshold and not is_day }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: heat
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.living_room
+                data:
+                  temperature: "{{ states('input_number.hvac_night_heat_living_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.dining_room
+                data:
+                  temperature: "{{ states('input_number.hvac_night_heat_dining_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.home_office
+                data:
+                  temperature: "{{ states('input_number.hvac_night_heat_home_office') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_night_heat_bedroom') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.master_bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_night_heat_master_bedroom') | float }}"
+          - conditions:
+              - condition: template
+                value_template: "{{ someone_home and outside_temp > cool_threshold and is_day }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: cool
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.living_room
+                data:
+                  temperature: "{{ states('input_number.hvac_day_cool_living_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.dining_room
+                data:
+                  temperature: "{{ states('input_number.hvac_day_cool_dining_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.home_office
+                data:
+                  temperature: "{{ states('input_number.hvac_day_cool_home_office') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_day_cool_bedroom') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.master_bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_day_cool_master_bedroom') | float }}"
+          - conditions:
+              - condition: template
+                value_template: "{{ someone_home and outside_temp > cool_threshold and not is_day }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id:
+                    - climate.living_room
+                    - climate.dining_room
+                    - climate.bedroom
+                    - climate.master_bedroom
+                    - climate.home_office
+                data:
+                  hvac_mode: cool
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.living_room
+                data:
+                  temperature: "{{ states('input_number.hvac_night_cool_living_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.dining_room
+                data:
+                  temperature: "{{ states('input_number.hvac_night_cool_dining_room') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.home_office
+                data:
+                  temperature: "{{ states('input_number.hvac_night_cool_home_office') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_night_cool_bedroom') | float }}"
+              - action: climate.set_temperature
+                target:
+                  entity_id: climate.master_bedroom
+                data:
+                  temperature: "{{ states('input_number.hvac_night_cool_master_bedroom') | float }}"
+    mode: single
+    
